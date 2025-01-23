@@ -1,0 +1,28 @@
+{
+    "GLOBAL_MEDIA_SETTINGS": {
+        "49-54": {
+            "MELLANOX": {
+                "pre1": {
+                    "lane0":"0x8"
+                },
+                "main": {
+                    "lane0":"0x8"
+                },
+                "post1": {
+                    "lane0":"0x2"
+                }
+            },
+            "Default": {
+                "pre1": {
+                    "lane0":"0x8"
+                },
+                "main": {
+                    "lane0":"0x8"
+                },
+                "post1": {
+                    "lane0":"0x2"
+                }
+            }
+        }
+    }
+}
