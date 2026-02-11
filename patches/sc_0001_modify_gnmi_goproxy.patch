@@ -1,0 +1,25 @@
+From 120d45f46765bbe54eed3359ef869f08734d699c Mon Sep 17 00:00:00 2001
+From: joshjiang113 <joshjiang@sdc.sercomm.com>
+Date: Mon, 9 Feb 2026 07:03:35 +0000
+Subject: [PATCH] modify gnmi goproxy
+
+---
+ Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index abce984..8776d67 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,6 +3,8 @@ export GOPATH=/tmp/go
+ endif
+ export PATH := $(PATH):$(GOPATH)/bin
+ 
++export GOPROXY=https://goproxy.cn,direct
++
+ INSTALL := /usr/bin/install
+ DBDIR := /var/run/redis/sonic-db/
+ GO ?= /usr/local/go/bin/go
+-- 
+2.25.1
+
