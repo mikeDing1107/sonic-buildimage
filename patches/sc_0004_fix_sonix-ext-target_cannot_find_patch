@@ -1,0 +1,21 @@
+From 14378766aed473a5b46212007cdc891a795cfdcf Mon Sep 17 00:00:00 2001
+From: joshjiang113 <joshjiang@sdc.sercomm.com>
+Date: Mon, 9 Feb 2026 08:38:30 +0000
+Subject: [PATCH] fix sonic-ext.target can't find
+
+---
+ .../etc/systemd/system/multi-user.target.wants/sonic-ext.target | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/platform/common/etc/systemd/system/multi-user.target.wants/sonic-ext.target b/platform/common/etc/systemd/system/multi-user.target.wants/sonic-ext.target
+index 5c398e5..c47bd86 120000
+--- a/platform/common/etc/systemd/system/multi-user.target.wants/sonic-ext.target
++++ b/platform/common/etc/systemd/system/multi-user.target.wants/sonic-ext.target
+@@ -1 +1 @@
+-/lib/systemd/system/sonic-ext.target
+\ No newline at end of file
++../../../../usr/lib/systemd/system/sonic-ext.target
+\ No newline at end of file
+-- 
+2.25.1
+
