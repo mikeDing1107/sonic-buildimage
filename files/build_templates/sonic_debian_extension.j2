@@ -29,6 +29,8 @@ IMAGE_DISTRO=$3
 
 ## Enable debug output for script
 set -x -e
+SECONDS=0
+echo ">>>begin time: ${SECONDS} s"
 
 CONFIGURED_ARCH=$([ -f .arch ] && cat .arch || echo amd64)
 CONFIGURED_PLATFORM=$([ -f .platform ] && cat .platform || echo generic)
@@ -77,6 +79,8 @@ else
     sudo chroot $FILESYSTEM_ROOT $DOCKER_CTL_SCRIPT start
 fi
 
+echo ">>>now time: ${SECONDS} s"
+
 install_pip_package() {
     pip_wheel=$1
     if [[ -z "$pip_wheel" ]]; then
@@ -84,7 +88,7 @@ install_pip_package() {
     fi
     sudo cp $pip_wheel $FILESYSTEM_ROOT/
     basename_pip_wheel=$(basename -a $@)
-    sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install $basename_pip_wheel
+    sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir $basename_pip_wheel
     ( cd $FILESYSTEM_ROOT; sudo rm -f $basename_pip_wheel )
 }
 
@@ -116,8 +120,9 @@ install_deb_package_lazy() {
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get update
 
 # Install efitools to support secure upgrade
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install efitools
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install mokutil
+sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install efitools mokutil python3-dev j2cli libxslt-dev libz-dev python3-m2crypto python3-cryptography python3-cffi python3-nacl libffi-dev libcairo2-dev libdbus-1-dev libgirepository1.0-dev libsystemd-dev pkg-config python3-dbus python3-gi libpam-pwquality libnss-ldapd libpam-ldapd ldap-utils libffi-dev libssl-dev python3-dbus
+
+echo ">>>now time: ${SECONDS} s"
 
 # Apply environtment configuration files
 sudo cp $IMAGE_CONFIGS/environment/environment $FILESYSTEM_ROOT/etc/
@@ -143,18 +148,12 @@ sudo bash -c "echo \"d	/dev/shm/monit/ 0755 root root\" > $FILESYSTEM_ROOT/etc/t
 sudo bash -c "echo \"d	/dev/shm/logrotate/ 0755 root root\" > $FILESYSTEM_ROOT/etc/tmpfiles.d/tmpfs-logrotate.conf"
 
 
-# Install a patched version of ifupdown2  (and its dependencies via 'apt-get -y install -f')
 install_deb_package $debs_path/ifupdown2_*.deb
 
-# Install dependencies for SONiC config engine
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install \
-    python3-dev
-
-# Install j2cli for handling jinja template
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install j2cli
-
+echo ">>>now time: ${SECONDS} s"
 # Install Python client for Redis
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install "redis==3.5.3"
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir "redis==3.5.3"
+echo ">>>now time: ${SECONDS} s"
 
 # Install redis-dump-load Python 3 package
 # Note: the scripts will be overwritten by corresponding Python 2 package
@@ -162,33 +161,13 @@ sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install "redis
 install_pip_package {{redis_dump_load_py3_wheel_path}}
 
 # Install Python module for psutil
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install psutil
+echo ">>>now time: ${SECONDS} s"
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir psutil blkinfo ipaddr "grpcio==1.58.0" "grpcio-tools==1.58.0"  smbus2 telnetlib3 
+echo ">>>now time: ${SECONDS} s"
 
-# Install Python module for blkinfo
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install blkinfo
-
-# Install Python module for ipaddr
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install ipaddr
-
-# Install Python module for grpcio and grpcio-toole
-if [[ $CONFIGURED_ARCH == amd64 || $CONFIGURED_ARCH == arm64 ]]; then
-    sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install "grpcio==1.58.0"
-    sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install "grpcio-tools==1.58.0"
-fi
-
-# Install Python module for smbus2
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install smbus2
-
-# Install Python module for telnetlib3
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install telnetlib3
 
 # Install sonic-py-common Python 3 package
 install_pip_package {{sonic_py_common_py3_wheel_path}}
-
-# Install dependency pkgs for SONiC config engine Python 2 package
-if [[ $CONFIGURED_ARCH == armhf || $CONFIGURED_ARCH == arm64 ]]; then
-    sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install libxslt-dev libz-dev
-fi
 
 # Install sonic-yang-models Python 3 package, install dependencies
 install_deb_package $debs_path/libyang_*.deb $debs_path/libyang-cpp_*.deb $debs_path/python3-yang_*.deb
@@ -202,8 +181,11 @@ install_pip_package {{sonic_yang_mgmt_py3_wheel_path}}
 # Then immediately uninstall enum34, as enum34 should not be installed for Python >= 3.4, as it causes a
 # conflict with the new 'enum' module in the standard library
 # https://github.com/robshakir/pyangbind/issues/232
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install pyangbind==0.8.2
+echo ">>>now time: ${SECONDS} s"
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir pyangbind==0.8.2
+echo ">>>now time: ${SECONDS} s"
 sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 uninstall -y enum34
+echo ">>>now time: ${SECONDS} s"
 
 # Install SONiC config engine Python 3 package
 install_pip_package {{config_engine_py3_wheel_path}}
@@ -219,22 +201,16 @@ install_pip_package {{pddf_platform_api_base_py3_wheel_path}}
 
 {# Barefoot platform vendors' sonic_platform packages import the Python 'thrift' library #}
 {% if sonic_asic_platform == "barefoot" %}
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install thrift==0.13.0
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir thrift==0.13.0
 {% endif %}
 
 # Install system-health Python 3 package
 install_pip_package {{system_health_py3_wheel_path}}
 
-# Install m2crypto, cryptography, cffi, and pynacl packages, used by sonic-utilities
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install python3-m2crypto python3-cryptography python3-cffi python3-nacl
-
-# install libffi-dev to match utilities' dependency.
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install libffi-dev
 
 # Install SONiC Utilities Python package
 install_pip_package {{sonic_utilities_py3_wheel_path}}
 
-# Install sonic-utilities data files (and any dependencies via 'apt-get -y install -f')
 install_deb_package $debs_path/sonic-utilities-data_*.deb
 
 # Install customized bash version to patch bash plugin support.
@@ -248,28 +224,22 @@ sudo cp -f $IMAGE_CONFIGS/bash/bash.bash_logout $FILESYSTEM_ROOT/etc/
 # Install readline's initialization file
 sudo cp -f $IMAGE_CONFIGS/readline/inputrc $FILESYSTEM_ROOT/etc/
 
-# Install prerequisites needed for installing the dependent Python packages of sonic-host-services
-# These packages can be uninstalled after installation
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install libcairo2-dev libdbus-1-dev libgirepository1.0-dev libsystemd-dev pkg-config python3-dbus
+echo ">>>now time: ${SECONDS} s"
 
 # Mark runtime dependencies as manually installed to avoid them being auto-removed while uninstalling build dependencies
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-mark manual gir1.2-glib-2.0 libdbus-1-3 libgirepository-1.0-1 libsystemd0 python3-dbus
 
 # Install systemd-python for SONiC host services
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install systemd-python
-
-# Install pygobject from apt repos. The version in Debian is
-# a bit older than what is in pip, but it should be fine.
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install python3-gi
+echo ">>>now time: ${SECONDS} s"
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir systemd-python
+echo ">>>now time: ${SECONDS} s"
 
 # Install SONiC host services package
 install_pip_package {{sonic_host_services_py3_wheel_path}}
 
-# Install SONiC host services data files (and any dependencies via 'apt-get -y install -f')
 install_deb_package $debs_path/sonic-host-services-data_*.deb
 
 {% if enable_ztp == "y" %}
-# Install ZTP (and its dependencies via 'apt-get -y install -f')
 install_deb_package $debs_path/sonic-ztp_*.deb
 {% endif %}
 
@@ -280,17 +250,8 @@ install_deb_package $debs_path/{{pkgname}}
 fi
 {% endfor %}
 
-# Install SONiC Device Data  (and its dependencies via 'apt-get -y install -f')
 install_deb_package $debs_path/sonic-device-data_*.deb
 
-# package for supporting password hardening
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install libpam-pwquality
-
-# Install pam-ldap, nss-ldap, ldap-utils
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install      \
-    libnss-ldapd \
-    libpam-ldapd \
-    ldap-utils
 
 # add networking.service dependancy to nslcd
 sudo LANG=C chroot $FILESYSTEM_ROOT sed -i '/# Required-Start:/ s/$/ networking.service/' /etc/init.d/nslcd
@@ -325,7 +286,7 @@ install_deb_package $debs_path/libnss-radius_*.deb
 #sudo LANG=C chroot $FILESYSTEM_ROOT pam-auth-update --remove radius tacplus
 sudo sed -i -e '/^passwd/s/ radius//' $FILESYSTEM_ROOT/etc/nsswitch.conf
 
-# Install a custom version of kdump-tools  (and its dependencies via 'apt-get -y install -f')
+echo ">>>now time: ${SECONDS} s"
 if [[ $CONFIGURED_ARCH == amd64 || $CONFIGURED_ARCH == arm64 ]]; then
     install_deb_package $debs_path/kdump-tools_*.deb
     cat $IMAGE_CONFIGS/kdump/kdump-tools | sudo tee -a $FILESYSTEM_ROOT/etc/default/kdump-tools > /dev/null
@@ -335,6 +296,7 @@ for kernel_release in $(ls $FILESYSTEM_ROOT/lib/modules/); do
 	sudo LANG=C chroot $FILESYSTEM_ROOT kdump-config symlinks $kernel_release
 done
 fi
+echo ">>>now time: ${SECONDS} s"
 
 # Install python-swss-common package and all its dependent packages
 {% if python_swss_debs.strip() -%}
@@ -508,7 +470,6 @@ if [[ $CONFIGURED_ARCH == amd64 ]]; then
     sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT systemctl enable rasdaemon.timer
 fi
 
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install libffi-dev libssl-dev
 
 {% if include_bootchart == 'y' %}
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install systemd-bootchart
@@ -523,8 +484,11 @@ sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable systemd-bootchart
 {% endif %}
 {% endif %}
 
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install azure-storage==0.36.0
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install watchdog==0.10.3
+echo ">>>now time: ${SECONDS} s"
+
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir azure-storage==0.36.0 watchdog==0.10.3
+
+echo ">>>now time: ${SECONDS} s"
 
 {% if include_kubernetes == "y" %}
 # Point to kubelet to /etc/resolv.conf
@@ -539,10 +503,12 @@ sudo cp $BUILD_TEMPLATES/kube_cni.10-flannel.conflist $FILESYSTEM_ROOT_USR_SHARE
 # Required even if include_kubernetes != y, as it contains the
 # the container wrapper for docker start/stop/wait commands.
 #
+echo ">>>now time: ${SECONDS} s"
 SONIC_CTRMGMT_WHEEL_NAME=$(basename {{sonic_ctrmgmt_py3_wheel_path}})
 sudo cp {{sonic_ctrmgmt_py3_wheel_path}} $FILESYSTEM_ROOT/$SONIC_CTRMGMT_WHEEL_NAME
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install $SONIC_CTRMGMT_WHEEL_NAME
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir $SONIC_CTRMGMT_WHEEL_NAME
 sudo rm -rf $FILESYSTEM_ROOT/$SONIC_CTRMGMT_WHEEL_NAME
+echo ">>>now time: ${SECONDS} s"
 
 # Config file used by container mgmt scripts/service
 fl="${files_path}/remote_ctr.config.json"
@@ -636,6 +602,7 @@ sudo cp $IMAGE_CONFIGS/config-topology/config-topology.service $FILESYSTEM_ROOT_
 echo "config-topology.service" | sudo tee -a $GENERATED_SERVICE_FILE
 sudo cp $IMAGE_CONFIGS/config-topology/config-topology.sh $FILESYSTEM_ROOT/usr/bin
 
+echo ">>>now time: ${SECONDS} s"
 # Generate initial SONiC configuration file
 j2 files/build_templates/init_cfg.json.j2 | sudo tee $FILESYSTEM_ROOT/etc/sonic/init_cfg.json
 
@@ -738,6 +705,8 @@ if [ "$INCLUDE_FIPS" == y ]; then
     sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y remove openssh-client
 fi
 
+echo ">>>now time: ${SECONDS} s"
+
 {% if installer_debs.strip() -%}
 {% for deb in installer_debs.strip().split(' ') -%}
 install_deb_package {{deb}}
@@ -837,10 +806,16 @@ if [[ $CONFIGURED_ARCH == armhf ]]; then
     ps -eo pid,cmd | grep python | grep "/etc/entropy.py" | awk '{print $1}' | xargs sudo kill -9 2>/dev/null || true
 fi
 
+echo ">>>now time: ${SECONDS} s"
+
+sudo chroot $FILESYSTEM_ROOT $DOCKER_CTL_SCRIPT restart
+sudo chroot $FILESYSTEM_ROOT sleep 10
+
 sudo mkdir $FILESYSTEM_ROOT/target
 sudo mount --bind target $FILESYSTEM_ROOT/target
 sudo LANG=C DOCKER_HOST="$DOCKER_HOST" chroot $FILESYSTEM_ROOT docker info
 
+echo ">>>now time: ${SECONDS} s"
 {% for docker_installation_target in installer_images.strip().split() -%}
 {% set pkgname, docker_build_path, machine, image = docker_installation_target.split('|') %}
 {% set imagefilepath = image.split(':')|first -%}
@@ -863,6 +838,7 @@ sudo LANG=C DOCKER_HOST="$DOCKER_HOST" chroot $FILESYSTEM_ROOT docker tag {{imag
 {% endif %}
 fi
 {% endfor %}
+echo ">>>now time: ${SECONDS} s"
 
 if [[ $CONFIGURED_PLATFORM == pensando ]]; then
 #Disable rc.local
@@ -918,12 +894,9 @@ sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT docker $SONIC_NATIV
 sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT docker $SONIC_NATIVE_DOCKERD_FOR_DOCKERFS tag linuxgeneva-microsoft.azurecr.io/distroless/genevafluentd_td-agent:${MASTER_FLUENTD_VERSION} linuxgeneva-microsoft.azurecr.io/distroless/genevafluentd_td-agent:latest
 echo "kubernetes master docker images pull complete"
 # Install python packages for mdm metrics collection service usage
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install psutil
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install statsd
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install kubernetes
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install pyOpenSSL
-# Install python packages to upload and download etcd backup files for backup and restore service usage
-sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install azure-storage-blob azure-identity azure-keyvault-secrets
+echo ">>>now time: ${SECONDS} s"
+sudo https_proxy=$https_proxy LANG=C chroot $FILESYSTEM_ROOT pip3 install --no-cache-dir psutil statsd kubernetes pyOpenSSL azure-storage-blob azure-identity azure-keyvault-secrets
+echo ">>>now time: ${SECONDS} s"
 sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable kubelet.service
 # Add kubernetes master entrance
 sudo cp files/image_config/kubernetes/kubernetes_master_entrance.service ${FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM}/
@@ -1064,6 +1037,8 @@ sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get purge
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get clean -y
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get autoremove -y
 
+echo ">>>now time: ${SECONDS} s"
+
 {% for file in installer_extra_files.split(' ') -%}
 {% if file.strip() -%}
 {% set src = file.split(':')[0] -%}
@@ -1154,7 +1129,6 @@ install_pip_package {{platform_api_py3_wheel_path}}
 
 install_deb_package $debs_path/libdashapi_*.deb
 
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install xmlstarlet
 
 # Copy component-versions file
 sudo cp $files_path/$COMPONENT_VERSIONS_FILE $FILESYSTEM_ROOT/etc/mlnx/component-versions
@@ -1181,7 +1155,6 @@ sudo LANG=C chroot $FILESYSTEM_ROOT /tmp/mask_disabled_services.py
 sudo rm -rf $FILESYSTEM_ROOT/tmp/mask_disabled_services.py
 
 
-sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-get -y install python3-dbus
 
 # Install FIPS python package will break apt-get purge command, so install after all purge command finish 
 if [ "$INCLUDE_FIPS" == y ]; then
@@ -1200,6 +1173,7 @@ PACKAGE_NAME=$(dpkg-deb -f {{deb}} Package)
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT apt-mark unhold $PACKAGE_NAME
 {% endfor %}
 {% endif %}
+echo ">>>now time: ${SECONDS} s"
 
 ## Enable MULTIDB
 {% if ENABLE_MULTIDB == "y" %}
