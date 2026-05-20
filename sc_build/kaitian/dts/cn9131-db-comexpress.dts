@@ -1,0 +1,194 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (C) 2019 Marvell International Ltd.
+ *
+ * Device tree for the CN9130 based COM Express type 7 board.
+ */
+
+#include "cn9130.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Marvell Armada CN9130-DB-Comexpress type 7 CPU module";
+	compatible = "marvell,cn9130",
+		"marvell,armada-ap807-quad",
+		"marvell,armada-ap807";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		i2c0 = &cp0_i2c0;
+		i2c1 = &cp0_i2c1;
+		i2c3 = &cp0_mss_i2c;
+		ethernet0 = &cp0_eth0;
+		ethernet1 = &cp0_eth2;
+	};
+
+	memory@00000000 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x80000000>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+/* on-board eMMC - U9 */
+&ap_sdhci0 {
+	pinctrl-names = "default";
+	bus-width = <8>;
+	status = "okay";
+	mmc-ddr-1_8v;
+	mmc-hs400-1_8v;
+	//vqmmc-supply = <&ap0_reg_mmc_vccq>;
+};
+
+/*
+ * CP0
+ */
+
+&cp0_gpio1 {
+	status = "okay";
+};
+
+&cp0_gpio2 {
+	status = "okay";
+};
+&cp0_i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&cp0_i2c0_pins>;
+	status = "okay";
+	clock-frequency = <100000>;
+};
+
+&cp0_i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&cp0_i2c1_pins>;
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+
+&cp0_pcie0 {
+	status = "okay";
+	num-lanes = <1>;
+	num-viewport = <8>;
+	/* Generic PHY, providing serdes lanes */
+	phys = <&cp0_comphy0 0>;
+	iommu-map =
+		<0x0   &smmu 0x480 0x20>,
+		<0x100 &smmu 0x4a0 0x20>,
+		<0x200 &smmu 0x4c0 0x20>;
+	iommu-map-mask = <0x031f>;
+};
+
+&cp0_mss_i2c {
+	pinctrl-names = "default";
+	pinctrl-0 = <&cp0_mss_i2c_pins>;
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+
+&cp0_spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&cp0_spi0_pins>;
+	reg = <0x700600 0x50>,		/* control */
+	      <0x2000000 0x1000000>;	/* CS0 */
+	status = "okay";
+
+	spi-flash@0 {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		compatible = "jedec,spi-nor";
+		reg = <0x0>;
+		/* On-board MUX does not allow higher frequencies */
+		spi-max-frequency = <40000000>;
+		
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <0x01>;
+			#size-cells = <0x01>;
+			
+			partition@0 {
+				label = "U-Boot-0";
+				reg = <0x00 0x200000>;
+			};
+			partition@200000 {
+				label = "U-Boot-2";
+				reg = <0x200000 0x200000>;
+			};
+			partition@400000 {
+				label = "Filesystem-0";
+				reg = <0x400000 0x400000>;
+			};
+		};
+	};
+};
+
+&cp0_syscon0 {
+	cp0_pinctrl: pinctrl {
+		compatible = "marvell,cp115-standalone-pinctrl";
+
+		cp0_i2c0_pins: cp0-i2c-pins-0 {
+			marvell,pins = "mpp37", "mpp38";
+			marvell,function = "i2c0";
+		};
+		cp0_i2c1_pins: cp0-i2c-pins-1 {
+			marvell,pins = "mpp2", "mpp3";
+			marvell,function = "i2c1";
+		};
+		cp0_mss_i2c_pins: cp0-mss-i2c_pins-0 {
+			marvell,pins = "mpp50", "mpp51";
+			marvell,function = "mss_i2c";
+		};
+		cp0_sdhci_pins: cp0-sdhi-pins-0 {
+			/*marvell,pins = "mpp56", "mpp57", "mpp58",
+				       "mpp59", "mpp60", "mpp61";
+			marvell,function = "sdio";*/
+		};
+		cp0_spi0_pins: cp0-spi-pins-0 {
+			marvell,pins = "mpp56", "mpp57", "mpp58", "mpp59";
+			marvell,function = "spi0";
+		};
+	};
+};
+
+&cp0_mdio {
+	status = "okay";
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+
+&cp0_mdio_uio { /* uses cp0_mdio */
+	status = "okay";
+};
+
+
+&cp0_ethernet {
+	status = "okay";
+};
+
+/*10G to switch*/
+&cp0_eth0 {
+	status = "okay";
+	phy-mode = "10gbase-kr";
+	managed = "in-band-status";
+	phys = <&cp0_comphy2 0>;
+};
+
+/*88E1514 PHY*/
+&cp0_eth2 {
+	status = "okay";
+	phy = <&phy0>;
+	phy-mode = "sgmii";
+	phys = <&cp0_comphy5 2>;
+        /*phy-reset-gpios = <&cp0_gpio2 28 GPIO_ACTIVE_LOW>;*/
+};
+
