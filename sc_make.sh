@@ -475,6 +475,8 @@ patch_ws()
         fi
 
 	apply_sercomm_patches
+	cp sc_build/kaitian/dts/* platform/marvell-prestera/mrvl-prestera/platform/arm64/common/boot/
+	cp sc_build/kaitian/config/* device/marvell/arm64-marvell_rd98DX45xx_cn9131-r0/rd98DX45xx_cn9131/
 	echo > patch_done
     fi
 }
