@@ -1,0 +1,133 @@
+From 7bf6c4432ada2c431794a28fc7fdaad5f2475e05 Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Mon, 1 Jun 2026 03:13:25 +0000
+Subject: [PATCH] config&show add cpu-monitor
+
+---
+ config/cpu_monitor.py | 33 +++++++++++++++++++++++++++++++++
+ config/main.py        |  2 ++
+ show/cpu_monitor.py   | 31 +++++++++++++++++++++++++++++++
+ show/main.py          |  2 ++
+ 4 files changed, 68 insertions(+)
+ create mode 100755 config/cpu_monitor.py
+ create mode 100755 show/cpu_monitor.py
+
+diff --git a/config/cpu_monitor.py b/config/cpu_monitor.py
+new file mode 100755
+index 00000000..618dcfba
+--- /dev/null
++++ b/config/cpu_monitor.py
+@@ -0,0 +1,33 @@
++import click
++import utilities_common.cli as clicommon
++from swsscommon import swsscommon
++from utilities_common.db import Db
++
++
++@click.group(cls=clicommon.AliasedGroup)
++def cpu_monitor():
++    """Configure CPU Monitor"""
++    pass
++
++
++@cpu_monitor.command(name="enable")
++@click.argument("status", type=click.Choice(["true", "false"]))
++@click.pass_context
++def enable_cpu_monitor(ctx, status):
++    """Enable or disable CPU monitor"""
++    db = ctx.obj if ctx.obj else Db()
++    db.cfgdb.mod_entry("CPU_MONITOR", "global", {"enable": status})
++    click.echo(f"CPU Monitor has been set to {status}")
++
++
++@cpu_monitor.command()
++@click.argument("interval", type=int)
++@click.pass_context
++def interval(ctx, interval):
++    """Set CPU monitor polling interval (seconds)"""
++    if interval < 1:
++        click.echo("Error: Interval must be at least 1 second.")
++        return
++    db = ctx.obj if ctx.obj else Db()
++    db.cfgdb.mod_entry("CPU_MONITOR", "global", {"interval": str(interval)})
++    click.echo(f"CPU Monitor interval set to {interval}s")
+diff --git a/config/main.py b/config/main.py
+index 24809dc7..da948c66 100644
+--- a/config/main.py
++++ b/config/main.py
+@@ -68,6 +68,7 @@ from . import switchport
+ from . import dns
+ from . import bgp_cli
+ from . import stp
++from . import cpu_monitor
+ 
+ # mock masic APIs for unit test
+ try:
+@@ -1607,6 +1608,7 @@ config.add_command(vxlan.vxlan)
+ # add stp commands
+ config.add_command(stp.spanning_tree)
+ 
++config.add_command(cpu_monitor.cpu_monitor)
+ # add mclag commands
+ config.add_command(mclag.mclag)
+ config.add_command(mclag.mclag_member)
+diff --git a/show/cpu_monitor.py b/show/cpu_monitor.py
+new file mode 100755
+index 00000000..e15bd810
+--- /dev/null
++++ b/show/cpu_monitor.py
+@@ -0,0 +1,31 @@
++import click
++import utilities_common.cli as clicommon
++
++
++@click.group(cls=clicommon.AliasedGroup)
++def cpu_monitor():
++    """Show CPU Monitor related information"""
++    pass
++
++
++@cpu_monitor.command()
++@click.pass_context
++def status(ctx):
++    """Show CPU Monitor status"""
++
++    from swsscommon import swsscommon
++    from utilities_common.db import Db
++
++    db = ctx.obj if ctx.obj else Db()
++    config_table = db.cfgdb.get_entry("CPU_MONITOR", "global")
++
++    if not config_table:
++        click.echo("CPU Monitor is not configured.")
++        return
++
++    enable = config_table.get("enable", "false")
++    interval = config_table.get("interval", "N/A")
++
++    click.echo(f"{'Status':<10} {'Interval(s)':<15}")
++    click.echo(f"{'-'*10} {'-'*15}")
++    click.echo(f"{enable:<10} {interval:<15}")
+diff --git a/show/main.py b/show/main.py
+index 8a5dee48..76b238ed 100755
+--- a/show/main.py
++++ b/show/main.py
+@@ -70,6 +70,7 @@ from . import bgp_cli
+ from . import stp
+ from . import srv6
+ from . import copp
++from . import cpu_monitor
+ 
+ # Global Variables
+ PLATFORM_JSON = 'platform.json'
+@@ -324,6 +325,7 @@ cli.add_command(dns.dns)
+ cli.add_command(stp.spanning_tree)
+ cli.add_command(srv6.srv6)
+ cli.add_command(copp.copp)
++cli.add_command(cpu_monitor.cpu_monitor)
+ 
+ # syslog module
+ cli.add_command(syslog.syslog)
+-- 
+2.25.1
+

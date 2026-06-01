@@ -1,0 +1,12 @@
+Source: cpu-monitor
+Section: utils
+Priority: optional
+Maintainer: YourName <your_email@example.com>
+Build-Depends: debhelper (>= 12)
+Standards-Version: 4.5.0
+
+Package: cpu-monitor
+Architecture: all
+Depends: python3
+Description: A simple CPU usage monitor for SONiC container
+

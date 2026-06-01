@@ -1,0 +1,20 @@
+[Unit]
+Description=CPU Monitor Container Service
+After=swss.service
+
+Requires=config-setup.service
+After=config-setup.service
+BindsTo=sonic.target
+After=sonic.target
+StartLimitIntervalSec=1200
+StartLimitBurst=3
+
+[Service]
+User=admin
+ExecStartPre=/usr/local/bin/cpu-monitor.sh start
+ExecStart=/usr/local/bin/cpu-monitor.sh wait
+ExecStop=/usr/local/bin/cpu-monitor.sh stop
+RestartSec=30
+
+[Install]
+WantedBy=sonic.target

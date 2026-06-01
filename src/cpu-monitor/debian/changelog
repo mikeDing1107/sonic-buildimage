@@ -1,0 +1,7 @@
+cpu-monitor (1.0.0) UNRELEASED; urgency=medium
+  * Initial release for SONiC build system.
+ -- YourName <your_email@example.com>  Mon, 25 May 2026 15:30:00 +0800
+
+cpu-monitor (0.1) UNRELEASED; urgency=low
+  * Dummy initial version to satisfy dpkg-genchanges.
+ -- YourName <your_email@example.com>  Mon, 25 May 2026 15:00:00 +0800

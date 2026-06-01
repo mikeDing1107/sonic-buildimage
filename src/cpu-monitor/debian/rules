@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	mkdir -p debian/cpu-monitor/usr/bin
+	cp config_listener.py debian/cpu-monitor/usr/bin/config_listener.py
+	cp cpu_collector.py debian/cpu-monitor/usr/bin/cpu_collector.py
+	chmod +x debian/cpu-monitor/usr/bin/config_listener.py
+	chmod +x debian/cpu-monitor/usr/bin/cpu_collector.py

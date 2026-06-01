@@ -2,3 +2,4 @@ sc_0001_modify_gnmi_goproxy.patch|src/sonic-gnmi
 sc_0002_modify_sonic-mgmt-common_goproxy.patch|src/sonic-mgmt-common
 sc_0003_modify_sonic-mgmt-framework_goproxy.patch|src/sonic-mgmt-framework
 sc_0004_fix_sonix-ext-target_cannot_find_patch|platform/marvell-prestera/mrvl-prestera
+sc_0005_add_sonic_config_and_show_cpu_monitor.patch|src/sonic-utilities
