@@ -332,6 +332,11 @@
         <SAIplt:sdk_device_id SAIplt:type="device-id-type">0</SAIplt:sdk_device_id>
         <SAIplt:sdk_port_id SAIplt:type="port-id-type">27</SAIplt:sdk_port_id>
       </SAIplt:port-list>
+      <SAIplt:port-list>
+        <SAIplt:sai_port_id SAIplt:type="port-id-type">28</SAIplt:sai_port_id>
+        <SAIplt:sdk_device_id SAIplt:type="device-id-type">0</SAIplt:sdk_device_id>
+        <SAIplt:sdk_port_id SAIplt:type="port-id-type">28</SAIplt:sdk_port_id>
+      </SAIplt:port-list>
     </SAIplt:Ports>
     <SAIplt:scalingAC5P_XL>
       <SAIplt:max_lag_members SAIplt:type="uint32">8</SAIplt:max_lag_members>
