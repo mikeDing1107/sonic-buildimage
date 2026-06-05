@@ -1,14 +1,14 @@
-From 7bf6c4432ada2c431794a28fc7fdaad5f2475e05 Mon Sep 17 00:00:00 2001
+From 3772772abfc60cecc2a4202183c68b9c6a978263 Mon Sep 17 00:00:00 2001
 From: joshjiang113 <josh_jiang@sdc.sercomm.com>
-Date: Mon, 1 Jun 2026 03:13:25 +0000
-Subject: [PATCH] config&show add cpu-monitor
+Date: Fri, 5 Jun 2026 02:07:52 +0000
+Subject: [PATCH] config and show cli add cpu-monitor
 
 ---
  config/cpu_monitor.py | 33 +++++++++++++++++++++++++++++++++
  config/main.py        |  2 ++
- show/cpu_monitor.py   | 31 +++++++++++++++++++++++++++++++
+ show/cpu_monitor.py   | 30 ++++++++++++++++++++++++++++++
  show/main.py          |  2 ++
- 4 files changed, 68 insertions(+)
+ 4 files changed, 67 insertions(+)
  create mode 100755 config/cpu_monitor.py
  create mode 100755 show/cpu_monitor.py
 
@@ -73,12 +73,14 @@ index 24809dc7..da948c66 100644
  config.add_command(mclag.mclag_member)
 diff --git a/show/cpu_monitor.py b/show/cpu_monitor.py
 new file mode 100755
-index 00000000..e15bd810
+index 00000000..3751f3e8
 --- /dev/null
 +++ b/show/cpu_monitor.py
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,30 @@
 +import click
 +import utilities_common.cli as clicommon
++from swsscommon import swsscommon
++from utilities_common.db import Db
 +
 +
 +@click.group(cls=clicommon.AliasedGroup)
@@ -91,9 +93,6 @@ index 00000000..e15bd810
 +@click.pass_context
 +def status(ctx):
 +    """Show CPU Monitor status"""
-+
-+    from swsscommon import swsscommon
-+    from utilities_common.db import Db
 +
 +    db = ctx.obj if ctx.obj else Db()
 +    config_table = db.cfgdb.get_entry("CPU_MONITOR", "global")
