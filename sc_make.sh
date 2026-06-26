@@ -24,7 +24,6 @@ ARTIFACTS_DIR=/sonic-artifacts
 BRANCH=""202505
 BUILD_PLATFORM="marvell-prestera"
 BUILD_PLATFORM_ARCH="arm64"
-BUILD_RPC="Y"
 PATCH_SCRIPT_URL="https://github.com/Marvell-switching/sonic-scripts/raw/refs/heads/master/marvell_sonic_patch_script.sh"
 DIR_PREFIX="ABU"
 ENABLE_DOCKER_BASE_PULL_YN="ENABLE_DOCKER_BASE_PULL=n"
@@ -57,15 +56,17 @@ print_usage()
     echo " $0"
     echo "   [-t <type>]"
     echo "   [-T <target>]"
+    echo "   [-P <product>]"
     echo ""
     echo "    -t : Build type"
     echo "    -T : Build target"
+    echo "    -P : Build product"
 echo """
 Example:
-./sc_make.sh -t all 
-./sc_make.sh -t image
-./sc_make.sh -T docker-teamd.gz
-./sc_make.sh -T debs/bookworm/tkmib_5.9.3+dfsg-2_all.deb
+./sc_make.sh -t all -P KaiTian 
+./sc_make.sh -t image -P KaiTian
+./sc_make.sh -T docker-teamd.gz -P DingDing
+./sc_make.sh -T debs/bookworm/tkmib_5.9.3+dfsg-2_all.deb -P DingDing
 """
 }
 
@@ -76,6 +77,11 @@ parse_arguments()
             -b|--branch)
                 BRANCH="$2"
                 shift # past argument
+                shift # past value
+                ;;
+	    -P|--product)
+		BUILD_PRODUCT="$2"
+		shift # past argument
                 shift # past value
                 ;;
             -p|--platform)
@@ -783,6 +789,14 @@ main()
             export NOBOOKWORM=0
             export NOTRIXIE=0
         fi
+    fi
+
+    if [[ ${BUILD_PRODUCT} == "KaiTian" || ${BUILD_PRODUCT} == "DingDing" ]]; then
+	    echo "${BUILD_PRODUCT}" > Product
+    else
+	    echo "ERROR: Invalid product name. Only 'KaiTian' or 'DingDing' are allowed."
+	    print_usage
+	    exit 1
     fi
 
     if [ "${BUILD_TYPE}" == "init" ]; then
