@@ -650,6 +650,9 @@ export build_date="$(date -u)"
 export build_number="${BUILD_NUMBER:-0}"
 export built_by="$USER@$BUILD_HOSTNAME"
 export sonic_os_version="${SONIC_OS_VERSION}"
+export vendor="Sercomm"
+export product="$(if [ -f ./Product ]; then cat Product; fi)"
+export software_version="$(if [ -f ./software_version ]; then cat software_version; fi)"
 j2 files/build_templates/sonic_version.yml.j2 | sudo tee $FILESYSTEM_ROOT/etc/sonic/sonic_version.yml
 
 if [ -f sonic_debian_extension.sh ]; then
