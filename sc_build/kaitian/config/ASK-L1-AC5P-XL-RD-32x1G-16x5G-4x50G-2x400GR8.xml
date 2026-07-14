@@ -730,6 +730,10 @@
           <ASKL1plt:ifMode ASKL1plt:type="interface-mode-type">1000BASE_X</ASKL1plt:ifMode>
           <ASKL1plt:speed ASKL1plt:type="port-speed-type">1G</ASKL1plt:speed>
         </ASKL1plt:IfModeSpeedList-list>
+        <ASKL1plt:IfModeSpeedList-list>
+          <ASKL1plt:ifMode ASKL1plt:type="interface-mode-type">SGMII</ASKL1plt:ifMode>
+          <ASKL1plt:speed ASKL1plt:type="port-speed-type">1G</ASKL1plt:speed>
+        </ASKL1plt:IfModeSpeedList-list>
         <ASKL1plt:APIfModeSpeedList-list>
           <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">CR</ASKL1plt:APifMode>
           <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">25G</ASKL1plt:APspeed>
@@ -751,6 +755,24 @@
         <ASKL1plt:APIfModeSpeedList-list>
           <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">1000BASE_X</ASKL1plt:APifMode>
           <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">1G</ASKL1plt:APspeed>
+          <ASKL1plt:APfecSupport ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecSupport>
+          <ASKL1plt:APfecRequest ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecRequest>
+        </ASKL1plt:APIfModeSpeedList-list>
+        <ASKL1plt:APIfModeSpeedList-list>
+          <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">SGMII</ASKL1plt:APifMode>
+          <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">1G</ASKL1plt:APspeed>
+          <ASKL1plt:APfecSupport ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecSupport>
+          <ASKL1plt:APfecRequest ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecRequest>
+        </ASKL1plt:APIfModeSpeedList-list>
+        <ASKL1plt:APIfModeSpeedList-list>
+          <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">SR_LR</ASKL1plt:APifMode>
+          <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">25G</ASKL1plt:APspeed>
+          <ASKL1plt:APfecSupport ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecSupport>
+          <ASKL1plt:APfecRequest ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecRequest>
+        </ASKL1plt:APIfModeSpeedList-list>
+        <ASKL1plt:APIfModeSpeedList-list>
+          <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">SR_LR</ASKL1plt:APifMode>
+          <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">10G</ASKL1plt:APspeed>
           <ASKL1plt:APfecSupport ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecSupport>
           <ASKL1plt:APfecRequest ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecRequest>
         </ASKL1plt:APIfModeSpeedList-list>
@@ -1017,7 +1039,7 @@
         <ASKL1plt:Serdes ASKL1plt:type="serdes-type">COMPHY_C112G</ASKL1plt:Serdes>
         <ASKL1plt:phySysSideSerdes ASKL1plt:type="phy-serdes-type">NA</ASKL1plt:phySysSideSerdes>
         <ASKL1plt:interconnectProfile ASKL1plt:type="port-interconnect-profile-type">profile_default</ASKL1plt:interconnectProfile>
-        <ASKL1plt:ifModeName ASKL1plt:type="string">50GR1</ASKL1plt:ifModeName>
+        <ASKL1plt:ifModeName ASKL1plt:type="string">25GR1</ASKL1plt:ifModeName>
         <ASKL1plt:supportDynamicPortBrkout ASKL1plt:type="boolean-type">false</ASKL1plt:supportDynamicPortBrkout>
         <ASKL1plt:supportedMediaType ASKL1plt:type="port-media-type">media_fiber</ASKL1plt:supportedMediaType>
       </ASKL1plt:port-list>
@@ -1026,7 +1048,7 @@
         <ASKL1plt:Serdes ASKL1plt:type="serdes-type">COMPHY_C112G</ASKL1plt:Serdes>
         <ASKL1plt:phySysSideSerdes ASKL1plt:type="phy-serdes-type">NA</ASKL1plt:phySysSideSerdes>
         <ASKL1plt:interconnectProfile ASKL1plt:type="port-interconnect-profile-type">profile_default</ASKL1plt:interconnectProfile>
-        <ASKL1plt:ifModeName ASKL1plt:type="string">50GR1</ASKL1plt:ifModeName>
+        <ASKL1plt:ifModeName ASKL1plt:type="string">25GR1</ASKL1plt:ifModeName>
         <ASKL1plt:supportDynamicPortBrkout ASKL1plt:type="boolean-type">false</ASKL1plt:supportDynamicPortBrkout>
         <ASKL1plt:supportedMediaType ASKL1plt:type="port-media-type">media_fiber</ASKL1plt:supportedMediaType>
       </ASKL1plt:port-list>
@@ -1035,7 +1057,7 @@
         <ASKL1plt:Serdes ASKL1plt:type="serdes-type">COMPHY_C112G</ASKL1plt:Serdes>
         <ASKL1plt:phySysSideSerdes ASKL1plt:type="phy-serdes-type">NA</ASKL1plt:phySysSideSerdes>
         <ASKL1plt:interconnectProfile ASKL1plt:type="port-interconnect-profile-type">profile_default</ASKL1plt:interconnectProfile>
-        <ASKL1plt:ifModeName ASKL1plt:type="string">50GR1</ASKL1plt:ifModeName>
+        <ASKL1plt:ifModeName ASKL1plt:type="string">25GR1</ASKL1plt:ifModeName>
         <ASKL1plt:supportDynamicPortBrkout ASKL1plt:type="boolean-type">false</ASKL1plt:supportDynamicPortBrkout>
         <ASKL1plt:supportedMediaType ASKL1plt:type="port-media-type">media_fiber</ASKL1plt:supportedMediaType>
       </ASKL1plt:port-list>
