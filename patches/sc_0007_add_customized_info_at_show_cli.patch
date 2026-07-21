@@ -18,7 +18,7 @@ index 76b238ed..343c7ada 100755
 -    click.echo("\nSONiC Software Version: SONiC.{}".format(version_info['build_version']))
 +    click.echo("\nVendor: {}".format(version_info['vendor']))
 +    click.echo("Product: {}".format(version_info['product']))
-+    click.echo("Sercomm Software Version: {}".format(version_info['software_version']))
++    click.echo("Sercomm Software Version: SONiC.{}".format(version_info['software_version']))
 +    click.echo("SONiC Software Version: SONiC.{}".format(version_info['build_version']))
      click.echo("SONiC OS Version: {}".format(version_info['sonic_os_version']))
      click.echo("Distribution: Debian {}".format(version_info['debian_version']))
