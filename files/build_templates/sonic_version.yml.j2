@@ -7,7 +7,7 @@ vendor: '{{ vendor }}'
 product: '{{ product }}'
 {% endif -%}
 {% if software_version is defined -%}
-software_version: '{{ build_version ~ "-" ~ software_version }}'
+software_version: '{{ build_version ~ "." ~ software_version }}'
 {% endif -%}
 {% if debian_version is defined -%}
 debian_version: '{{ debian_version }}'
