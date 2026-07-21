@@ -37,6 +37,7 @@ yang_files = [
     'sonic-chassis-module.yang',
     'sonic-copp.yang',
     'sonic-console.yang',
+    'sonic-cpu-monitor.yang',
     'sonic-crm.yang',
     'sonic-dash.yang',
     'sonic-debug-counter.yang',

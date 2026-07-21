@@ -1,0 +1,17 @@
+module sonic-cpu-monitor {
+    namespace "https://github.com/Telecominfraproject/ols-ucentral-client";
+    prefix cpumon;
+
+    container sonic-cpu-monitor {
+        container CPU_MONITOR {
+            container global {
+                leaf enable {
+                    type string;
+                }
+                leaf interval {
+                    type string;
+                }
+            }
+        }
+    }
+}
