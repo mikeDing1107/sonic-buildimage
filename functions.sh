@@ -52,6 +52,6 @@ docker_try_rmi() {
 
 sonic_get_version() {
     local branch_name=$(git rev-parse --abbrev-ref HEAD)
-    local hash_id=$(git rev-parse --short HEAD)
+    local hash_id=$(git ls-remote --heads $(git remote) $(git branch --show-current) | cut -c1-7)
     echo "${branch_name}.${hash_id}" | sed 's/\//_/g'
 }
