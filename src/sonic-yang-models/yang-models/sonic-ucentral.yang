@@ -1,0 +1,20 @@
+module sonic-ucentral {
+    namespace "https://github.com/Telecominfraproject/ols-ucentral-client/sonic-ucnetral";
+    prefix ucentral;
+
+    container sonic-ucentral {
+        container UCENTRAL {
+            container global {
+                leaf enable {
+                    type string;
+                }
+                leaf RedirectorURL {
+                    type string;
+                }
+                leaf SN {
+                    type string;
+                }
+            }
+        }
+    }
+}

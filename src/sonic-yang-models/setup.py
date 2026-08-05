@@ -38,6 +38,7 @@ yang_files = [
     'sonic-copp.yang',
     'sonic-console.yang',
     'sonic-cpu-monitor.yang',
+    'sonic-ucentral.yang',
     'sonic-crm.yang',
     'sonic-dash.yang',
     'sonic-debug-counter.yang',
