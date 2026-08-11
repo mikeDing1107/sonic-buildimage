@@ -1,0 +1,5 @@
+# Global NTP servers - fallback when no DHCP NTP
+# pool.ntp.org uses GeoDNS, resolves to nearby servers worldwide
+pool pool.ntp.org iburst
+server time.google.com iburst
+server time.cloudflare.com iburst
