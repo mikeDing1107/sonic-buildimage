@@ -402,6 +402,10 @@ sudo LANG=C chroot $FILESYSTEM_ROOT systemctl disable chrony.service
 sudo cp $IMAGE_CONFIGS/chrony/override.conf $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM/chrony.service.d/
 sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable chrony.service
 
+# Set default timezone to Asia/Shanghai (UTC+8)
+sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai $FILESYSTEM_ROOT/etc/localtime
+echo "Asia/Shanghai" | sudo tee $FILESYSTEM_ROOT/etc/timezone
+
 # Copy DNS templates
 sudo cp $BUILD_TEMPLATES/dns.j2 $FILESYSTEM_ROOT_USR_SHARE_SONIC_TEMPLATES/
 
