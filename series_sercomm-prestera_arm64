@@ -7,3 +7,4 @@ sc_0006_add_system_name_customization.patch|src/sonic-platform-daemons
 sc_0007_add_customized_info_at_show_cli.patch|src/sonic-utilities
 sc_0008_add_sonic_config_and_show_ucentral.patch|src/sonic-utilities
 sc_0009_add_50g_stp_support.patch|src/sonic-stp
+sc_0010_fix_sfp_info_cannot_show.patch|platform/marvell-prestera/sonic-platform-marvell
