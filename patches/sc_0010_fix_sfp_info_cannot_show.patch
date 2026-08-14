@@ -1,21 +1,21 @@
-From d377212323340415dcf7951dd70302b1407079a5 Mon Sep 17 00:00:00 2001
+From 88045b97abc2e8b528ebf5a078a179819a946fd8 Mon Sep 17 00:00:00 2001
 From: joshjiang113 <josh_jiang@sdc.sercomm.com>
-Date: Fri, 14 Aug 2026 08:45:58 +0000
-Subject: [PATCH] fix sfp info show fail
+Date: Fri, 14 Aug 2026 09:56:51 +0000
+Subject: [PATCH] fix sfp show info fail
 
 ---
- rd98dx45xx_cn9131/sonic_platform/chassis.py   | 165 +++++-----
+ rd98dx45xx_cn9131/sonic_platform/chassis.py   | 163 ++++------
  rd98dx45xx_cn9131/sonic_platform/mux_map.py   |  36 +++
- rd98dx45xx_cn9131/sonic_platform/sfp.py       | 282 ++++++++----------
- rd98dx45xx_cn9131/sonic_platform/sfp_event.py | 188 ++++++------
- 4 files changed, 338 insertions(+), 333 deletions(-)
+ rd98dx45xx_cn9131/sonic_platform/sfp.py       | 285 ++++++++----------
+ rd98dx45xx_cn9131/sonic_platform/sfp_event.py | 185 ++++++------
+ 4 files changed, 329 insertions(+), 340 deletions(-)
  create mode 100644 rd98dx45xx_cn9131/sonic_platform/mux_map.py
 
 diff --git a/rd98dx45xx_cn9131/sonic_platform/chassis.py b/rd98dx45xx_cn9131/sonic_platform/chassis.py
-index 02911e7..b1beb55 100644
+index 02911e7..184713f 100644
 --- a/rd98dx45xx_cn9131/sonic_platform/chassis.py
 +++ b/rd98dx45xx_cn9131/sonic_platform/chassis.py
-@@ -3,49 +3,48 @@
+@@ -3,49 +3,47 @@
  # Module contains an implementation of SONiC Platform Base API and
  # provides the platform information
  ##################################################################
@@ -24,7 +24,6 @@ index 02911e7..b1beb55 100644
      import os
      import sys
 +    import smbus
-+    import threading # Added for I2C locking
      from sonic_platform_base.chassis_base import ChassisBase
      from sonic_platform.sfp import Sfp
      from sonic_platform.eeprom import Eeprom
@@ -32,7 +31,7 @@ index 02911e7..b1beb55 100644
      from sonic_platform.component import Component
 -
 +    # Import shared MUX map
-+    from sonic_platform.mux_map import PORT_MUX_MAP 
++    from sonic_platform.mux_map import PORT_MUX_MAP
  except ImportError as e:
      raise ImportError(str(e) + "- required module not found")
  
@@ -77,11 +76,10 @@ index 02911e7..b1beb55 100644
      def __init__(self):
          ChassisBase.__init__(self)
          # Port numbers for Initialize SFP list
-@@ -54,44 +53,51 @@ class Chassis(ChassisBase):
+@@ -54,44 +52,48 @@ class Chassis(ChassisBase):
          self.SFP_PORT_START = SFP_PORT_START
          self.SFP_PORT_END = SFP_PORT_END
          self.PORT_END = PORT_END
-+        
 +        self.bus = None
 +        try:
 +            self.bus = smbus.SMBus(1)
@@ -90,9 +88,9 @@ index 02911e7..b1beb55 100644
 +            sonic_logger.log_error("Failed to initialize I2C bus 1: {}".format(e))
  
 -        eeprom_path = '/sys/bus/i2c/devices/0-0050/eeprom'
+-
 +        port_eeprom_path = '/sys/bus/i2c/devices/1-0050/eeprom'
-+        i2cdev = 1 
- 
++        i2cdev = 1
          # for non-sfp ports create dummy objects for copper / non-sfp ports
 -        for index in range(self.COPPER_PORT_START, self.COPPER_PORT_END+1):
 -            port=index-1
@@ -115,7 +113,7 @@ index 02911e7..b1beb55 100644
 -            sfp_node = Sfp(index, 'SFP', port_eeprom_path, i2cdev )
 -            self._sfp_list.append(sfp_node)
          self.sfp_event_initialized = False
- 
+-
          # Instantiate ONIE system eeprom object
          self._eeprom = Eeprom()
 -
@@ -129,7 +127,7 @@ index 02911e7..b1beb55 100644
 +        if self.bus:
 +            try:
 +                self.bus.close()
-+            except:
++            except (IOError, OSError):
 +                pass
  
      def __is_host(self):
@@ -149,7 +147,7 @@ index 02911e7..b1beb55 100644
          Returns:
              An object dervied from SfpBase representing the specified sfp
          """
-@@ -105,40 +111,35 @@ class Chassis(ChassisBase):
+@@ -105,40 +107,35 @@ class Chassis(ChassisBase):
          return sfp
  
      def get_name(self):
@@ -195,7 +193,7 @@ index 02911e7..b1beb55 100644
          Returns:
              bool: A boolean value, True if chassis is operating properly
              False if not
-@@ -146,40 +147,29 @@ class Chassis(ChassisBase):
+@@ -146,45 +143,33 @@ class Chassis(ChassisBase):
          return True
  
      def get_base_mac(self):
@@ -242,9 +240,17 @@ index 02911e7..b1beb55 100644
 -        Retrieves the cause of the previous reboot
 +        """ Retrieves the cause of the previous reboot
          Returns:
-             A tuple (string, string) where the first element is a string
-             containing the cause of the previous reboot. This string must be
-@@ -192,16 +182,12 @@ class Chassis(ChassisBase):
+-            A tuple (string, string) where the first element is a string
+-            containing the cause of the previous reboot. This string must be
+-            one of the predefined strings in this class. If the first string
+-            is "REBOOT_CAUSE_HARDWARE_OTHER", the second string can be used
++            A tuple (string, string) where the first element is a string containing the cause of the
++            previous reboot. This string must be one of the predefined strings in this class.
++            If the first string is "REBOOT_CAUSE_HARDWARE_OTHER", the second string can be used
+             to pass a description of the reboot cause.
+         """
+         #lrr = self._get_cpld_register('mb_reboot_cause')
+@@ -192,16 +177,12 @@ class Chassis(ChassisBase):
          #    reset_reason = lrr
          #    if (reset_reason in self.reset_reason_dict):
          #        return (self.reset_reason_dict[reset_reason], None)
@@ -264,7 +270,7 @@ index 02911e7..b1beb55 100644
          """
          try:
              if self._watchdog is None:
-@@ -210,29 +196,26 @@ class Chassis(ChassisBase):
+@@ -210,29 +191,17 @@ class Chassis(ChassisBase):
                  self._watchdog = WatchdogImplBase(watchdog_device_path)
          except Exception as e:
              sonic_logger.log_warning(" Fail to load watchdog {}".format(repr(e)))
@@ -274,12 +280,12 @@ index 02911e7..b1beb55 100644
      def get_change_event(self, timeout=0):
 -        """
 -        Returns a nested dictionary containing all devices which have
-+        """ Returns a nested dictionary containing all devices which have
-         experienced a change at chassis level
+-        experienced a change at chassis level
++        """ Returns a nested dictionary containing all devices which have experienced a change at chassis level
          Args:
-             timeout: Timeout in milliseconds (optional). If timeout == 0,
+-            timeout: Timeout in milliseconds (optional). If timeout == 0,
 -                this method will block until a change is detected.
-+            this method will block until a change is detected.
++            timeout: Timeout in milliseconds (optional). If timeout == 0, this method will block until a change is detected.
          Returns:
              (bool, dict):
 -                - True if call successful, False if not;
@@ -294,19 +300,12 @@ index 02911e7..b1beb55 100644
 -                      indicates that fan 0 has been removed, fan 2
 -                      has been inserted and sfp 11 has been removed.
 +            - True if call successful, False if not;
-+            - A nested dictionary where key is a device type,
-+            value is a dictionary with key:value pairs in the format of
-+            {'device_id':'device_event'}, where device_id is the device ID for
-+            this device and device_event,
-+            status='1' represents device inserted, status='0' represents
-+            device removed.
-+            Ex. {'fan':{'0':'0', '2':'1'}, 'sfp':{'11':'0'}} indicates
-+            that fan 0 has been removed, fan 2 has been inserted and sfp 11 has
-+            been removed.
++            - A nested dictionary where key is a device type, value is a dictionary with key:value pairs in the format of {'device_id':'device_event'}, where device_id is the device ID for this device and device_event, status='1' represents device inserted, status='0' represents device removed.
++            Ex. {'fan':{'0':'0', '2':'1'}, 'sfp':{'11':'0'}} indicates that fan 0 has been removed, fan 2 has been inserted and sfp 11 has been removed.
          """
          # Initialize SFP event first
          if not self.sfp_event_initialized:
-@@ -249,17 +232,15 @@ class Chassis(ChassisBase):
+@@ -249,17 +218,17 @@ class Chassis(ChassisBase):
              # logger.log_info(" wait_for_ever get_change_event %d" % timeout)
              timeout = MAX_SELECT_DELAY
              while True:
@@ -319,17 +318,16 @@ index 02911e7..b1beb55 100644
              # return true without change after timeout and will transition to "SYSTEM_READY"
              # logger.log_info(" initial get_change_event %d" % timeout )
 -            status = self.sfp_event.check_sfp_status( port_dict, timeout)
--
--        if status:
++            status = self.sfp_event.check_sfp_status(port_dict, timeout)
+ 
++        # Return statement moved outside if/else to ensure return value is always provided
+         if status:
 -            return True, {'sfp':port_dict}
--        else:
++            return True, {'sfp': port_dict}
+         else:
 -            return True, {'sfp':{}}
 -
-+            status = self.sfp_event.check_sfp_status(port_dict, timeout)
-+            if status:
-+                return True, {'sfp':port_dict}
-+            else:
-+                return True, {'sfp':{}}
++            return True, {'sfp': {}}
 diff --git a/rd98dx45xx_cn9131/sonic_platform/mux_map.py b/rd98dx45xx_cn9131/sonic_platform/mux_map.py
 new file mode 100644
 index 0000000..e934fd2
@@ -373,10 +371,10 @@ index 0000000..e934fd2
 +    1: 0x18   # Ethernet29 -> twenty5GigE1
 +}
 diff --git a/rd98dx45xx_cn9131/sonic_platform/sfp.py b/rd98dx45xx_cn9131/sonic_platform/sfp.py
-index 7c97aa6..43d2bef 100644
+index 7c97aa6..dce6e23 100644
 --- a/rd98dx45xx_cn9131/sonic_platform/sfp.py
 +++ b/rd98dx45xx_cn9131/sonic_platform/sfp.py
-@@ -1,214 +1,184 @@
+@@ -1,214 +1,193 @@
 -# Name: sfp.py, version: 1.0
 -#
 -# Description: Module contains the definitions of SFP related APIs
@@ -481,14 +479,12 @@ index 7c97aa6..43d2bef 100644
 +            except (IOError, OSError) as e:
 +                logger.log_error("Failed to switch MUX for port {}: {}".format(self.index, e))
 +        return False
- 
--        Sfp.instances.append(self)
++
 +    def read_eeprom(self, offset, num_bytes, addr=0x50):
 +        """ Safely read EEPROM bytes in chunks of max 32 bytes. """
-+        if not self._switch_mux():
-+            return None
-         
 +        with i2c_lock:
++            if not self._switch_mux():
++                return None
 +            try:
 +                result = bytearray()
 +                bytes_remaining = num_bytes
@@ -513,10 +509,9 @@ index 7c97aa6..43d2bef 100644
 +        This intercepts the base class's read requests and maps them to our I2C MUX logic.
 +        Crucially, it maps offset >= 256 to EEPROM address 0x51 (A2h).
 +        """
-+        if not self._switch_mux():
-+            return None
-+
 +        with i2c_lock:
++            if not self._switch_mux():
++                return None
 +            try:
 +                result = bytearray()
 +                bytes_remaining = size
@@ -547,7 +542,9 @@ index 7c97aa6..43d2bef 100644
 +            except Exception as e:
 +                logger.log_error("Failed to read EEPROM bytes for port {}: {}".format(self.index, e))
 +                return None
-+
+ 
+-        Sfp.instances.append(self)
+-        
      def get_eeprom_path(self):
          return self.eeprom_path
  
@@ -560,7 +557,7 @@ index 7c97aa6..43d2bef 100644
 +        """ Determine if the optical module is present by reading the first few bytes of EEPROM. """
          if self.sfp_type == COPPER_TYPE:
              return False
--
+ 
 -        if smbus_present == 0:  # if called from sfputil outside of pmon
 -            cmdstatus, sfpstatus = getstatusoutput_noshell(['sudo', 'i2cget', '-y', '0', '0x41', '0x3'])            
 -            sfpstatus = int(sfpstatus, 16)
@@ -569,22 +566,29 @@ index 7c97aa6..43d2bef 100644
 -            DEVICE_ADDRESS = 0x41
 -            DEVICE_REG = 0x3
 -            sfpstatus = bus.read_byte_data(DEVICE_ADDRESS, DEVICE_REG)
--
--        pos = [1, 2, 4, 8]
--        bit_pos = pos[self.index-SFP_PORT_START]
--        sfpstatus = sfpstatus & (bit_pos)
--
--        if sfpstatus == 0:
--            return True
--
--        return False
 +        # Try to read the first 4 bytes of EEPROM
 +        eeprom_raw = self.read_eeprom(0, 4)
 +        if eeprom_raw is None or len(eeprom_raw) < 4:
 +            return False
-+        # If all 0x00 or all 0xFF, it indicates no module is present
-+        if eeprom_raw == b'\x00\x00\x00\x00' or eeprom_raw == b'\xff\xff\xff\xff':
+ 
+-        pos = [1, 2, 4, 8]
+-        bit_pos = pos[self.index-SFP_PORT_START]
+-        sfpstatus = sfpstatus & (bit_pos)
++        # FIX: Validate the Identifier byte (first byte) instead of checking for all 0x00/0xFF.
++        # Common SFP/QSFP identifier values:
++        # 0x03: SFP
++        # 0x0C: SFP+
++        # 0x0D: QSFP+
++        # 0x11: QSFP28
++        identifier = eeprom_raw[0]
++        valid_identifiers = [0x03, 0x0C, 0x0D, 0x11]
+ 
+-        if sfpstatus == 0:
+-            return True
++        if identifier not in valid_identifiers:
 +            return False
+ 
+-        return False
 +        return True
  
      def get_name(self):
@@ -718,15 +722,15 @@ index 7c97aa6..43d2bef 100644
 +        """Retrieves the lpmode status of this SFP."""
 +        return False
 diff --git a/rd98dx45xx_cn9131/sonic_platform/sfp_event.py b/rd98dx45xx_cn9131/sonic_platform/sfp_event.py
-index 7f3d6c9..180c870 100644
+index 7f3d6c9..deb8452 100644
 --- a/rd98dx45xx_cn9131/sonic_platform/sfp_event.py
 +++ b/rd98dx45xx_cn9131/sonic_platform/sfp_event.py
-@@ -1,112 +1,130 @@
- '''
+@@ -1,112 +1,117 @@
+-'''
 -listen for the SFP change event and return to chassis.
-+Listens for SFP insert/remove events via software polling.
-+This implementation dynamically switches the I2C MUX and reads the EEPROM
-+presence bit for each port, which is necessary for shared I2C bus architectures.
++''' Listens for SFP insert/remove events via software polling.
++This implementation dynamically switches the I2C MUX and reads the EEPROM presence bit for each port,
++which is necessary for shared I2C bus architectures.
  '''
  import time
 +import smbus
@@ -734,11 +738,12 @@ index 7f3d6c9..180c870 100644
 -from sonic_py_common.general import getstatusoutput_noshell
 -
 -smbus_present = 1
- 
-+# Import the Sfp class to use its get_presence method, and the shared I2C lock
+-
++# Import the Sfp class to use its get_presence method
++# Removed unused 'i2c_lock' import
  try:
 -    import smbus
-+    from sonic_platform.sfp import Sfp, i2c_lock 
++    from sonic_platform.sfp import Sfp
 +    from sonic_platform.mux_map import PORT_MUX_MAP # Import shared MUX map
  except ImportError as e:
 -    smbus_present = 0
@@ -763,8 +768,8 @@ index 7f3d6c9..180c870 100644
  
  class sfp_event:
 -    ''' Listen to plugin/plugout cable events '''
+-
 +    ''' Listen to plugin/plugout cable events via software polling '''
- 
      def __init__(self):
 -        self.handle = None
 +        # Dictionary to store the last known presence state for each port
@@ -779,16 +784,13 @@ index 7f3d6c9..180c870 100644
 -        time.sleep(5)
 -        self.modprs_register = self._get_transceiver_status()
 -        sonic_logger.log_info("Initial SFP presence=%d" % self.modprs_register)
-+        """
-+        Initializes the SFP presence cache by polling all ports once.
++        """ Initializes the SFP presence cache by polling all ports once.
 +        This is called once at startup.
 +        """
 +        sonic_logger.log_info("Initializing SFP event listener via software polling...")
-+
 +        # Replicate the Sfp object creation logic from chassis.py
 +        port_eeprom_path = '/sys/bus/i2c/devices/1-0050/eeprom' # Placeholder, not used for presence
 +        i2cdev = 1
-+
 +        try:
 +            self.bus = smbus.SMBus(1)
 +        except (IOError, OSError) as e:
@@ -801,12 +803,10 @@ index 7f3d6c9..180c870 100644
 +                sonic_logger.log_error("No MUX mapping found for port index {}".format(index))
 +                self.sfp_presence_cache[index] = False
 +                continue
-+
 +            # Create an Sfp object for this port
 +            # Pass the shared bus and map to Sfp
 +            sfp_node = Sfp(index, 'SFP', port_eeprom_path, i2cdev, self.bus, PORT_MUX_MAP)
 +            self.sfp_objects[index] = sfp_node
-+
 +            # Read initial presence state
 +            presence = sfp_node.get_presence()
 +            self.sfp_presence_cache[index] = presence
@@ -840,24 +840,16 @@ index 7f3d6c9..180c870 100644
 +        if self.bus:
 +            try:
 +                self.bus.close()
-+            except:
++            except (IOError, OSError):
 +                pass
-+            self.bus = None
++        self.bus = None
  
      def check_sfp_status(self, port_change, timeout):
-         """
+-        """
 -        check_sfp_status called from get_change_event, this will return correct
 -            status of all 4 SFP ports if there is a change in any of them
-+        Polls all SFP ports to check for presence changes.
-         """
-+        if not self.is_initialized:
-+            self.initialize()
-+
-+        forever = (timeout == 0)
-+        poll_timeout = timeout / 1000.0 if not forever else 1.0
-+        poll_interval = 1 # Poll every 1s
-+
-         start_time = time.time()
+-        """
+-        start_time = time.time()
 -        port = SFP_PORT_START
 -        forever = False
 -
@@ -868,7 +860,10 @@ index 7f3d6c9..180c870 100644
 -        else:
 -            return False, {}
 -        end_time = start_time + timeout
--
++        """ Polls all SFP ports to check for presence changes. """
++        if not self.is_initialized:
++            self.initialize()
+ 
 -        if (start_time > end_time):
 -            return False, {}  # Time wrap or possibly incorrect timeout
 -
@@ -890,21 +885,22 @@ index 7f3d6c9..180c870 100644
 -
 -                # Update reg value
 -                self.modprs_register = reg_value
++        forever = (timeout == 0)
++        poll_timeout = timeout / 1000.0 if not forever else 1.0
++        poll_interval = 1 # Poll every 1s
++        start_time = time.time()
 +        end_time = start_time + poll_timeout if not forever else None
 +
 +        while True:
 +            loop_start = time.time()
 +            detected_change = False
-+
 +            # Poll all ports
 +            for index in range(SFP_PORT_START, SFP_PORT_END + 1):
 +                if index not in self.sfp_objects:
 +                    continue
-+
 +                sfp_node = self.sfp_objects[index]
 +                current_presence = sfp_node.get_presence()
 +                last_presence = self.sfp_presence_cache.get(index, False)
-+
 +                if current_presence != last_presence:
 +                    # State changed!
 +                    self.sfp_presence_cache[index] = current_presence
