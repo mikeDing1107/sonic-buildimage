@@ -1,0 +1,57 @@
+From c63143f0 Mon Sep 17 00:00:00 2001
+From: Mike <mike@sercomm.com>
+Date: Thu, 13 Aug 2026 12:00:00 +0800
+Subject: [PATCH] add 50G port speed support in STP path cost
+
+---
+ include/stp.h      | 2 ++
+ include/stp_intf.h | 1 +
+ stp/stp_util.c     | 2 ++
+ 3 files changed, 5 insertions(+)
+
+diff --git a/include/stp.h b/include/stp.h
+index a6f76d9..9939036 100755
+--- a/include/stp.h
++++ b/include/stp.h
+@@ -52,6 +52,7 @@
+ #define STP_LEGACY_PORT_PATH_COST_25G 1
+ #define STP_LEGACY_PORT_PATH_COST_40G 1
++#define STP_LEGACY_PORT_PATH_COST_50G 1
+ #define STP_LEGACY_PORT_PATH_COST_100G 1
+ #define STP_LEGACY_PORT_PATH_COST_400G 1
+ 
+@@ -64,6 +65,7 @@
+ #define STP_PORT_PATH_COST_10G 2000
+ #define STP_PORT_PATH_COST_25G 800
+ #define STP_PORT_PATH_COST_40G 500
++#define STP_PORT_PATH_COST_50G 400
+ #define STP_PORT_PATH_COST_100G 200
+ #define STP_PORT_PATH_COST_400G 50
+ #define STP_PORT_PATH_COST_1T 20
+diff --git a/include/stp_intf.h b/include/stp_intf.h
+index a6f76d9..9939036 100755
+--- a/include/stp_intf.h
++++ b/include/stp_intf.h
+@@ -121,6 +121,7 @@ typedef enum STP_PORT_SPEED
+     STP_SPEED_10G   = 10000,
+     STP_SPEED_25G   = 25000,
+     STP_SPEED_40G   = 40000,
++    STP_SPEED_50G   = 50000,
+     STP_SPEED_100G  = 100000,
+     STP_SPEED_400G  = 400000,
+     STP_SPEED_1T    = 1000000,
+diff --git a/stp/stp_util.c b/stp/stp_util.c
+index fc02544..1d6873f 100755
+--- a/stp/stp_util.c
++++ b/stp/stp_util.c
+@@ -91,6 +91,8 @@ UINT32 stputil_get_path_cost(STP_PORT_SPEED port_speed, bool extend)
+ 
+                case STP_SPEED_40G:
+                        return ((extend) ? STP_PORT_PATH_COST_40G : STP_LEGACY_PORT_PATH_COST_40G);
++               case STP_SPEED_50G:
++                       return ((extend) ? STP_PORT_PATH_COST_50G : STP_LEGACY_PORT_PATH_COST_50G);
+ 
+                case STP_SPEED_100G:
+                        return ((extend) ? STP_PORT_PATH_COST_100G: STP_LEGACY_PORT_PATH_COST_100G);
+-- 
+2.25.1
