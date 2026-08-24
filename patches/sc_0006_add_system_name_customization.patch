@@ -15,9 +15,9 @@ index b1aafb8..dcc7b3b 100644
  # Functions
  # 
  
-+SERIAL_FILE = "/etc/sonic/device_serial.conf"
-+MODEL_FILE = "/etc/sonic/device_model.conf"
-+REVISION_FILE = "/etc/sonic/device_revision.conf"
++SERIAL_FILE = "/host/product/mac"
++MODEL_FILE = "/host/product/model_name"
++REVISION_FILE = "/host/product/hw_version"
 +
 +def _read_value_from_file(file_path):
 +    if os.path.exists(file_path):
