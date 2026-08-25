@@ -1,0 +1,12 @@
+[Unit]
+Description=SC product info sync to ConfigDB
+After=config-setup.service database.service
+Before=hostcfgd.service interfaces-config.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sc_sync_configdb.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

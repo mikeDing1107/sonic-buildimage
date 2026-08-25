@@ -1,0 +1,12 @@
+[Unit]
+Description=SC product partition provisioning
+After=rc-local.service
+Before=config-setup.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sc_product.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
