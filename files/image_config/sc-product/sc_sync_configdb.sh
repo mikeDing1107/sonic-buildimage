@@ -13,4 +13,5 @@ mac_fmt=$(echo "$mac" | sed 's/../&:/g; s/:$//')
 sonic-db-cli CONFIG_DB HSET 'DEVICE_METADATA|localhost' serial_number "$mac_fmt"
 sonic-db-cli CONFIG_DB HSET 'DEVICE_METADATA|localhost' hardware_rev "$hw"
 sonic-db-cli CONFIG_DB HSET 'DEVICE_METADATA|localhost' model_name "$model"
+sonic-db-cli CONFIG_DB HSET 'UCENTRAL|global' SN "$mac"
 config save -y
