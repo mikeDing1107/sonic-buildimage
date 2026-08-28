@@ -9,3 +9,4 @@ sc_0008_add_sonic_config_and_show_ucentral.patch|src/sonic-utilities
 sc_0009_add_50g_stp_support.patch|src/sonic-stp
 sc_0010_fix_sfp_info_cannot_show.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_1011_import_more_yang_model.patch|src/sonic-mgmt-common
+sc_1012_fix_show_version_not_in_time.patch|src/sonic-utilities

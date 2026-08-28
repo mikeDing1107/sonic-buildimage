@@ -496,6 +496,19 @@ def get_sonic_version_info():
 
     return sonic_ver_info
 
+def get_product_info():
+    product_info_dict = {}
+
+    serial = get_localhost_info('serial_number')
+    model = get_localhost_info('model_name')
+    revision = get_localhost_info('hardware_rev')
+
+    product_info_dict['serial'] = serial if serial is not None else 'N/A'
+    product_info_dict['model'] = model if model is not None else 'N/A'
+    product_info_dict['revision'] = revision if revision is not None else 'N/A'
+
+    return product_info_dict
+
 def get_sonic_version_file():
     if not os.path.isfile(SONIC_VERSION_YAML_PATH):
         return None
