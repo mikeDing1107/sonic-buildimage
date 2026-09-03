@@ -1,0 +1,150 @@
+From c6a6e44d3ac0609d860cb6b7d8a92999845d74ce Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Thu, 3 Sep 2026 03:22:05 +0000
+Subject: [PATCH] add reboot&reset button function
+
+---
+ .../sonic-platform-rd98dx45xx-cn9131.install  |  2 +
+ .../sonic-platform-rd98dx45xx-cn9131.postinst |  3 +
+ rd98dx45xx_cn9131/service/rst_button.service  | 17 ++++
+ rd98dx45xx_cn9131/utils/rst_button.py         | 80 +++++++++++++++++++
+ 4 files changed, 102 insertions(+)
+ create mode 100644 rd98dx45xx_cn9131/service/rst_button.service
+ create mode 100755 rd98dx45xx_cn9131/utils/rst_button.py
+
+diff --git a/debian/sonic-platform-rd98dx45xx-cn9131.install b/debian/sonic-platform-rd98dx45xx-cn9131.install
+index d7ff749..a57f6db 100644
+--- a/debian/sonic-platform-rd98dx45xx-cn9131.install
++++ b/debian/sonic-platform-rd98dx45xx-cn9131.install
+@@ -1,3 +1,5 @@
++rd98dx45xx_cn9131/service/rst_button.service etc/systemd/system
++rd98dx45xx_cn9131/utils/rst_button.py usr/local/bin
+ rd98dx45xx_cn9131/scripts/rd98dx45xx-cn9131-init.sh  usr/local/bin
+ rd98dx45xx_cn9131/service/rd98dx45xx-cn9131-init.service etc/systemd/system
+ rd98dx45xx_cn9131/sonic_platform-1.0-py3-none-any.whl usr/share/sonic/device/arm64-marvell_rd98DX45xx_cn9131-r0
+diff --git a/debian/sonic-platform-rd98dx45xx-cn9131.postinst b/debian/sonic-platform-rd98dx45xx-cn9131.postinst
+index bf41765..c67b6ce 100644
+--- a/debian/sonic-platform-rd98dx45xx-cn9131.postinst
++++ b/debian/sonic-platform-rd98dx45xx-cn9131.postinst
+@@ -8,5 +8,8 @@ depmod -a
+ systemctl restart kmod
+ systemctl enable rd98dx45xx-cn9131-init.service
+ systemctl start rd98dx45xx-cn9131-init.service
++chmod a+x /usr/local/bin/rst_button.py
++systemctl enable rst_button.service
++systemctl start rst_button.service
+ exit 0
+ 
+diff --git a/rd98dx45xx_cn9131/service/rst_button.service b/rd98dx45xx_cn9131/service/rst_button.service
+new file mode 100644
+index 0000000..a22e3f7
+--- /dev/null
++++ b/rd98dx45xx_cn9131/service/rst_button.service
+@@ -0,0 +1,17 @@
++[Unit]
++Description=Reboot Button Monitor Service
++After=pmon.service rd98dx45xx-cn9131-init.service
++DefaultDependencies=no
++
++[Service]
++ExecStartPre=/usr/bin/sleep 20
++ExecStart=/usr/bin/python3 /usr/local/bin/rst_button.py
++KillSignal=SIGKILL
++SuccessExitStatus=SIGKILL
++Restart=on-failure
++RestartSec=5s
++StandardOutput=journal
++StandardError=journal
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/rd98dx45xx_cn9131/utils/rst_button.py b/rd98dx45xx_cn9131/utils/rst_button.py
+new file mode 100755
+index 0000000..051bf3a
+--- /dev/null
++++ b/rd98dx45xx_cn9131/utils/rst_button.py
+@@ -0,0 +1,80 @@
++import subprocess
++import time
++import os
++
++GPIO_TOOL = "/etc/sercomm/sc_gpio"
++GPIO_PIN = "36"
++
++REBOOT_MIN_TIME = 1
++FACTORY_MIN_TIME = 5
++
++class RstButtonMonitor:
++    def __init__(self):
++        try:
++            subprocess.run([GPIO_TOOL, "dir", GPIO_PIN, "0"], check=True)
++            print(f"GPIO {GPIO_PIN} set to input mode.", flush=True)
++        except Exception as e:
++            print(f"Failed to set GPIO direction: {e}", flush=True)
++
++    def read_gpio_state(self):
++        try:
++            result = subprocess.run([GPIO_TOOL, "dat", GPIO_PIN], capture_output=True, text=True)
++            return "gpio36 value: 0" in result.stdout
++        except Exception as e:
++            print(f"Failed to read GPIO: {e}", flush=True)
++            return False
++
++    def restore_default(self):
++        print("Factory reset triggered. Restoring default config...", flush=True)
++        
++        subprocess.run(["rm", "-f", "/etc/sonic/config_db.json"])
++        time.sleep(0.5)
++        
++        subprocess.run(["sync"])
++        time.sleep(0.5)
++        subprocess.run(["sync"])
++        time.sleep(0.5)
++        
++        cmd = ["passwd", "admin"]
++        try:
++            p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
++            p.stdin.write("YourPaSsWoRd\n".encode('utf-8'))
++            p.stdin.flush()
++            p.stdin.write("YourPaSsWoRd\n".encode('utf-8'))
++            p.stdin.flush()
++            p.communicate()
++        except Exception as e:
++            print(f"Restore default password failed: {e}", flush=True)
++
++    def run(self):
++        print("Button monitor started. Waiting for press...", flush=True)
++        
++        while True:
++            while not self.read_gpio_state():
++                time.sleep(0.1) 
++            
++            press_start_time = time.time()
++            print("Button pressed...", flush=True)
++            
++            while self.read_gpio_state():
++                time.sleep(0.1) 
++            
++            press_duration = time.time() - press_start_time
++            print(f"Button released. Duration: {press_duration:.2f}s", flush=True)
++            
++            if press_duration >= FACTORY_MIN_TIME:
++                self.restore_default()
++                time.sleep(2)
++                print("Rebooting for factory reset...", flush=True)
++                os.system("reset-factory")
++                
++            elif press_duration >= REBOOT_MIN_TIME:
++                print("Rebooting system...", flush=True)
++                os.system("reboot")
++                
++            else:
++                print("Short press ignored (<1s). No action taken.", flush=True)
++
++if __name__ == '__main__':
++    monitor = RstButtonMonitor()
++    monitor.run()
+\ No newline at end of file
+-- 
+2.25.1
+
