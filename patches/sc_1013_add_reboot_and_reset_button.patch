@@ -117,15 +117,15 @@ index 0000000..051bf3a
 +        
 +        while True:
 +            while not self.read_gpio_state():
-+                time.sleep(1) 
++                time.sleep(0.1) 
 +            
 +            press_start_time = time.time()
 +            print("Button pressed...", flush=True)
 +            
 +            while self.read_gpio_state():
-+                time.sleep(1) 
++                time.sleep(0.1) 
 +            
-+            press_duration = time.time() - press_start_time + 1
++            press_duration = time.time() - press_start_time
 +            print(f"Button released. Duration: {press_duration:.2f}s", flush=True)
 +            
 +            if press_duration >= FACTORY_MIN_TIME:
