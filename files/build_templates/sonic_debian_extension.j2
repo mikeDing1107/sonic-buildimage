@@ -396,6 +396,7 @@ sudo cp $IMAGE_CONFIGS/chrony/check_ntp_status.sh $FILESYSTEM_ROOT/usr/local/bin
 # chrony package creates /etc/chrony/{conf.d,sources.d}; just install our extra config files
 sudo cp $IMAGE_CONFIGS/chrony/ntp-global.sources $FILESYSTEM_ROOT/etc/chrony/sources.d/
 sudo cp $IMAGE_CONFIGS/chrony/99-ntp-fix.conf $FILESYSTEM_ROOT/etc/chrony/conf.d/
+sudo cp $IMAGE_CONFIGS/chrony/chrony.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM
 sudo mkdir $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM/chrony.service.d
 # Don't start chrony with multi-user.target, add our override, and start it with sonic.target
 sudo LANG=C chroot $FILESYSTEM_ROOT systemctl disable chrony.service
