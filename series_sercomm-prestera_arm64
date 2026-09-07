@@ -10,3 +10,5 @@ sc_0010_fix_sfp_info_cannot_show.patch|platform/marvell-prestera/sonic-platform-
 sc_1011_import_more_yang_model.patch|src/sonic-mgmt-common
 sc_1012_fix_show_version_not_in_time.patch|src/sonic-utilities
 sc_1013_add_reboot_and_reset_button.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_1014_gnmi_support_factory_reset.patch|src/sonic-gnmi
+sc_1015_host_services_support_factory_reset.patch|src/sonic-host-services

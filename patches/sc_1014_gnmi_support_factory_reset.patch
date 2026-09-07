@@ -1,0 +1,366 @@
+From b580a07a025dfb507ad157bf358f4245fbb6cfdc Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Mon, 7 Sep 2026 01:47:21 +0000
+Subject: [PATCH] gnmi support for factore reset
+
+---
+ common_utils/context.go                    |  3 +
+ gnmi_server/gnoi_reset.go                  | 46 ++++++++++++
+ gnmi_server/gnoi_reset_test.go             | 82 ++++++++++++++++++++++
+ gnmi_server/server.go                      |  3 +
+ gnoi_client/factory_reset/factory_reset.go | 36 ++++++++++
+ gnoi_client/gnoi_client.go                 | 10 +++
+ sonic_service_client/dbus_client.go        | 21 ++++++
+ sonic_service_client/dbus_client_test.go   | 39 ++++++++++
+ 8 files changed, 240 insertions(+)
+ create mode 100644 gnmi_server/gnoi_reset.go
+ create mode 100644 gnmi_server/gnoi_reset_test.go
+ create mode 100644 gnoi_client/factory_reset/factory_reset.go
+
+diff --git a/common_utils/context.go b/common_utils/context.go
+index cfbdaf3..5d6367d 100644
+--- a/common_utils/context.go
++++ b/common_utils/context.go
+@@ -43,6 +43,7 @@ const (
+ 	GNMI_SET
+ 	GNMI_SET_FAIL
+ 	GNOI_REBOOT
++	GNOI_FACTORY_RESET
+ 	DBUS
+ 	DBUS_FAIL
+ 	DBUS_APPLY_PATCH_DB
+@@ -77,6 +78,8 @@ func (c CounterType) String() string {
+ 		return "GNMI set fail"
+ 	case GNOI_REBOOT:
+ 		return "GNOI reboot"
++	case GNOI_FACTORY_RESET:
++		return "GNOI Factory Reset"
+ 	case DBUS:
+ 		return "DBUS"
+ 	case DBUS_FAIL:
+diff --git a/gnmi_server/gnoi_reset.go b/gnmi_server/gnoi_reset.go
+new file mode 100644
+index 0000000..4a0e180
+--- /dev/null
++++ b/gnmi_server/gnoi_reset.go
+@@ -0,0 +1,46 @@
++package gnmi
++
++import (
++	"context"
++	"fmt"
++
++	log "github.com/golang/glog"
++	"github.com/openconfig/gnoi/factory_reset"
++	ssc "github.com/sonic-net/sonic-gnmi/sonic_service_client"
++	"google.golang.org/grpc/codes"
++	"google.golang.org/grpc/status"
++	json "google.golang.org/protobuf/encoding/protojson"
++)
++
++// Start implements the corresponding RPC.
++func (srv *Server) Start(ctx context.Context, req *factory_reset.StartRequest) (*factory_reset.StartResponse, error) {
++	ctx, err := authenticate(srv.config, ctx, "gnoi", false)
++	if err != nil {
++		return nil, err
++	}
++	log.V(1).Info("gNOI: factory_reset.Start")
++
++	// Front end marshals the request, and sends to the sonic-host-service.
++	// Back end is expected to return the response in JSON format.
++	reqStr, err := json.Marshal(req)
++	if err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Cannot marshal the StartRequest: [%s], err %v", req.String(), err))
++	}
++
++	sc, err := ssc.NewDbusClient()
++	if err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Error creating dbus client: [%s]", err.Error()))
++	}
++
++	respStr, err := sc.FactoryReset(string(reqStr))
++	log.V(1).Infof("gNOI: factory_reset.Start Response %s", respStr)
++	if err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Backend error: %v", err))
++	}
++
++	resp := &factory_reset.StartResponse{}
++	if err := json.Unmarshal([]byte(respStr), resp); err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Cannot unmarshal backend response: [%s], error: %v", respStr, err))
++	}
++	return resp, nil
++}
+diff --git a/gnmi_server/gnoi_reset_test.go b/gnmi_server/gnoi_reset_test.go
+new file mode 100644
+index 0000000..084bf94
+--- /dev/null
++++ b/gnmi_server/gnoi_reset_test.go
+@@ -0,0 +1,82 @@
++package gnmi
++
++import (
++	"context"
++	"crypto/tls"
++	"fmt"
++	"testing"
++
++	"github.com/agiledragon/gomonkey/v2"
++	reset_pb "github.com/openconfig/gnoi/factory_reset"
++	ssc "github.com/sonic-net/sonic-gnmi/sonic_service_client"
++
++	"google.golang.org/grpc"
++	"google.golang.org/grpc/codes"
++	"google.golang.org/grpc/credentials"
++	"google.golang.org/grpc/status"
++)
++
++const (
++	factoryResetSuccess string = `{"reset_success": {}}`
++	factoryResetFail    string = `{"reset_error": {"other": true, "detail": "Previous reset is ongoing."}}`
++)
++
++func TestGnoiResetServer(t *testing.T) {
++	s := createServer(t, 8081)
++	go runServer(t, s)
++	defer s.Stop()
++
++	tlsConfig := &tls.Config{InsecureSkipVerify: true}
++	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
++	targetAddr := "127.0.0.1:8081"
++	conn, err := grpc.Dial(targetAddr, opts...)
++	if err != nil {
++		t.Fatalf("Dialing to %s failed: %v", targetAddr, err)
++	}
++	defer conn.Close()
++	c := reset_pb.NewFactoryResetClient(conn)
++
++	t.Run("Successful Reset", func(t *testing.T) {
++		patch1 := gomonkey.ApplyFuncReturn(ssc.NewDbusClient, &ssc.DbusClient{}, nil)
++		patch2 := gomonkey.ApplyFuncReturn(ssc.DbusApi, factoryResetSuccess, nil)
++		defer patch1.Reset()
++		defer patch2.Reset()
++
++		resp, err := c.Start(context.Background(), &reset_pb.StartRequest{})
++		if err != nil {
++			t.Fatalf("Unexpected error %v", err)
++		}
++		if _, ok := resp.GetResponse().(*reset_pb.StartResponse_ResetSuccess); !ok {
++			t.Fatalf("Expected ResetSuccess but got %#v", resp.Response)
++		}
++	})
++
++	t.Run("Unsuccessful Reset, DBUS Client Error", func(t *testing.T) {
++		patch := gomonkey.ApplyFuncReturn(ssc.NewDbusClient, nil, fmt.Errorf("client error"))
++		defer patch.Reset()
++
++		_, err := c.Start(context.Background(), &reset_pb.StartRequest{})
++		if err == nil {
++			t.Fatalf("Expected error but got success")
++		}
++		if status.Code(err) != codes.Internal {
++			t.Fatalf("Expected Internal error but got %#v (%#v)", status.Code(err), err)
++		}
++	})
++
++	t.Run("Unsuccessful Reset, DBUS Error", func(t *testing.T) {
++		patch1 := gomonkey.ApplyFuncReturn(ssc.NewDbusClient, &ssc.DbusClient{}, nil)
++		patch2 := gomonkey.ApplyFuncReturn(ssc.DbusApi, factoryResetFail, nil)
++		defer patch1.Reset()
++		defer patch2.Reset()
++
++		resp, err := c.Start(context.Background(), &reset_pb.StartRequest{})
++		if err != nil {
++			t.Fatalf("Unexpected error %v", err)
++		}
++		if _, ok := resp.GetResponse().(*reset_pb.StartResponse_ResetError); !ok {
++			t.Fatalf("Expected ResetError but got %#v", resp.Response)
++		}
++	})
++
++}
+diff --git a/gnmi_server/server.go b/gnmi_server/server.go
+index 9878319..779fd49 100644
+--- a/gnmi_server/server.go
++++ b/gnmi_server/server.go
+@@ -21,6 +21,7 @@ import (
+ 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
+ 	gnmi_extpb "github.com/openconfig/gnmi/proto/gnmi_ext"
+ 	gnoi_containerz_pb "github.com/openconfig/gnoi/containerz"
++	"github.com/openconfig/gnoi/factory_reset"
+ 	gnoi_system_pb "github.com/openconfig/gnoi/system"
+ 
+ 	//gnoi_yang "github.com/sonic-net/sonic-gnmi/build/gnoi_yang/server"
+@@ -56,6 +57,7 @@ type Server struct {
+ 	ReqFromMaster func(req *gnmipb.SetRequest, masterEID *uint128) error
+ 	masterEID     uint128
+ 	gnoi_system_pb.UnimplementedSystemServer
++	factory_reset.UnimplementedFactoryResetServer
+ }
+ 
+ // FileServer is the server API for File service.
+@@ -204,6 +206,7 @@ func NewServer(config *Config, opts []grpc.ServerOption) (*Server, error) {
+ 		return nil, fmt.Errorf("failed to open listener port %d: %v", srv.config.Port, err)
+ 	}
+ 	gnmipb.RegisterGNMIServer(srv.s, srv)
++	factory_reset.RegisterFactoryResetServer(srv.s, srv)
+ 	spb_jwt_gnoi.RegisterSonicJwtServiceServer(srv.s, srv)
+ 	if srv.config.EnableTranslibWrite || srv.config.EnableNativeWrite {
+ 		gnoi_system_pb.RegisterSystemServer(srv.s, srv)
+diff --git a/gnoi_client/factory_reset/factory_reset.go b/gnoi_client/factory_reset/factory_reset.go
+new file mode 100644
+index 0000000..7cbeb0e
+--- /dev/null
++++ b/gnoi_client/factory_reset/factory_reset.go
+@@ -0,0 +1,36 @@
++package factory_reset
++
++import (
++	"context"
++	"encoding/json"
++	"fmt"
++
++	syspb "github.com/openconfig/gnoi/factory_reset"
++	"github.com/sonic-net/sonic-gnmi/gnoi_client/config"
++	"github.com/sonic-net/sonic-gnmi/gnoi_client/utils"
++)
++
++func StartFactoryReset(sc syspb.FactoryResetClient, ctx context.Context) {
++	fmt.Println("Start Factory Reset.")
++	ctx = utils.SetUserCreds(ctx)
++	if *config.Args == "" {
++		panic("--jsonin must be set.")
++	}
++
++	req := &syspb.StartRequest{}
++	if err := json.Unmarshal([]byte(*config.Args), req); err != nil {
++		fmt.Println("Unable to parse JSON input: ", err)
++		panic("Unable to parse JSON input.")
++	}
++
++	resp, err := sc.Start(ctx, req)
++	if err != nil {
++		panic(err.Error())
++	}
++
++	respstr, err := json.Marshal(resp)
++	if err != nil {
++		panic(err.Error())
++	}
++	fmt.Println(string(respstr))
++}
+diff --git a/gnoi_client/gnoi_client.go b/gnoi_client/gnoi_client.go
+index f89506a..9b78637 100644
+--- a/gnoi_client/gnoi_client.go
++++ b/gnoi_client/gnoi_client.go
+@@ -6,8 +6,10 @@ import (
+ 	"os/signal"
+ 
+ 	"github.com/google/gnxi/utils/credentials"
++	factory_reset_pb "github.com/openconfig/gnoi/factory_reset"
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/config"
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/containerz"
++	"github.com/sonic-net/sonic-gnmi/gnoi_client/factory_reset"
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/file"
+ 	gnoi_os "github.com/sonic-net/sonic-gnmi/gnoi_client/os" // So it does not collide with os.
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/sonic"
+@@ -65,6 +67,14 @@ func main() {
+ 		default:
+ 			panic("Invalid RPC Name")
+ 		}
++	case "FactoryReset":
++		frc := factory_reset_pb.NewFactoryResetClient(conn)
++		switch *config.Rpc {
++		case "Start":
++			factory_reset.StartFactoryReset(frc, ctx)
++		default:
++			panic("Invalid RPC Name")
++		}
+ 	case "Sonic":
+ 		switch *config.Rpc {
+ 		case "showtechsupport":
+diff --git a/sonic_service_client/dbus_client.go b/sonic_service_client/dbus_client.go
+index b261be9..fc91f88 100644
+--- a/sonic_service_client/dbus_client.go
++++ b/sonic_service_client/dbus_client.go
+@@ -33,6 +33,7 @@ type Service interface {
+ 	InstallImage(where string) error
+ 	ListImages() (string, error)
+ 	ActivateImage(image string) error
++	FactoryReset(cmd string) (string, error)
+ 	// Docker services APIs
+ 	LoadDockerImage(image string) error
+ }
+@@ -305,3 +306,23 @@ func (c *DbusClient) LoadDockerImage(image string) error {
+ 	_, err := DbusApi(busName, busPath, intName /*timeout=*/, 180, image)
+ 	return err
+ }
++
++func (c *DbusClient) FactoryReset(cmd string) (string, error) {
++	modName := "gnoi_reset"
++	busName := c.busNamePrefix + modName
++	busPath := c.busPathPrefix + modName
++	intName := c.intNamePrefix + modName + ".issue_reset"
++
++	common_utils.IncCounter(common_utils.GNOI_FACTORY_RESET)
++	result, err := DbusApi(busName, busPath, intName, 10, cmd)
++	if err != nil {
++		return "", err
++	}
++
++	strResult, ok := result.(string)
++	if !ok {
++		return "", fmt.Errorf("Invalid result type %v: expected string, got %T", reflect.TypeOf(result), result)
++	}
++
++	return strResult, nil
++}
+diff --git a/sonic_service_client/dbus_client_test.go b/sonic_service_client/dbus_client_test.go
+index 3a23435..4b6dc99 100644
+--- a/sonic_service_client/dbus_client_test.go
++++ b/sonic_service_client/dbus_client_test.go
+@@ -1153,3 +1153,42 @@ func TestRemoveFileFail(t *testing.T) {
+ 		t.Errorf("Expected error message '%s' but got '%v'", errMsg, err)
+ 	}
+ }
++
++func TestFactoryReset(t *testing.T) {
++	expectedCmd := "REBOOT"
++	expectedResult := "reset_success"
++
++	// Patch dbus.SystemBus to return a fake connection
++	mock1 := gomonkey.ApplyFunc(dbus.SystemBus, func() (conn *dbus.Conn, err error) {
++		return &dbus.Conn{}, nil
++	})
++	defer mock1.Reset()
++
++	// Patch (*dbus.Object).Go to simulate DBus response
++	mock2 := gomonkey.ApplyMethod(reflect.TypeOf(&dbus.Object{}), "Go", func(obj *dbus.Object, method string, flags dbus.Flags, ch chan *dbus.Call, args ...interface{}) *dbus.Call {
++		if method != "org.SONiC.HostService.gnoi_reset.issue_reset" {
++			t.Errorf("Wrong method: %v", method)
++		}
++		ret := &dbus.Call{}
++		ret.Err = nil
++		ret.Body = make([]interface{}, 2)
++		ret.Body[0] = int32(0) // success code
++		ret.Body[1] = expectedResult
++		ch <- ret
++		return ret
++	})
++	defer mock2.Reset()
++
++	client, err := NewDbusClient()
++	if err != nil {
++		t.Fatalf("NewDbusClient failed: %v", err)
++	}
++
++	result, err := client.FactoryReset(expectedCmd)
++	if err != nil {
++		t.Errorf("FactoryReset failed: %v", err)
++	}
++	if result != expectedResult {
++		t.Errorf("Expected result: %s, got: %s", expectedResult, result)
++	}
++}
+-- 
+2.25.1
+

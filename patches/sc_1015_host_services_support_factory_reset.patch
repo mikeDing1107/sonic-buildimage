@@ -1,0 +1,314 @@
+From 034a871ce0caa5ef9e50f488c93e1c788f381257 Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Mon, 7 Sep 2026 01:50:13 +0000
+Subject: [PATCH] sonic-host-services support for factory reset
+
+---
+ host_modules/gnoi_reset.py | 149 +++++++++++++++++++++++++++++++++++++
+ scripts/sonic-host-server  |   5 +-
+ tests/gnoi_reset_test.py   | 114 ++++++++++++++++++++++++++++
+ 3 files changed, 266 insertions(+), 2 deletions(-)
+ create mode 100644 host_modules/gnoi_reset.py
+ create mode 100644 tests/gnoi_reset_test.py
+
+diff --git a/host_modules/gnoi_reset.py b/host_modules/gnoi_reset.py
+new file mode 100644
+index 0000000..b2f60b5
+--- /dev/null
++++ b/host_modules/gnoi_reset.py
+@@ -0,0 +1,149 @@
++"""gNOI reset module which performs factory reset."""
++
++import json
++import logging
++import subprocess
++import threading
++from host_modules import host_service
++
++MOD_NAME = "gnoi_reset"
++logger = logging.getLogger(__name__)
++
++
++class GnoiReset(host_service.HostModule):
++    """DBus endpoint that executes the factory reset and returns the reset status and response."""
++
++    def __init__(self, mod_name):
++        self.lock = threading.Lock()
++        self.is_reset_ongoing = False
++        self.reset_request = {}
++        self.reset_response = {}
++        super(GnoiReset, self).__init__(mod_name)
++
++    def populate_reset_response(
++        self,
++        reset_success=True,
++        factory_os_unsupported=False,
++        zero_fill_unsupported=False,
++        detail="",
++    ) -> tuple[int, str]:
++        """Populate the factory reset response."""
++        with self.lock:
++            self.reset_response = {}
++            response = {}
++            if reset_success:
++                self.reset_response["reset_success"] = {}
++                response["reset_success"] = {}
++                return 0, json.dumps(response)
++            else:
++                self.reset_response["reset_error"] = {}
++                response["reset_error"] = {}
++                if factory_os_unsupported:
++                    self.reset_response["reset_error"]["factory_os_unsupported"] = True
++                elif zero_fill_unsupported:
++                    self.reset_response["reset_error"]["zero_fill_unsupported"] = True
++                else:
++                    self.reset_response["reset_error"]["other"] = True
++                response["reset_error"]["detail"] = detail
++                return 1, json.dumps(response)
++
++    def _check_reboot_in_progress(self) -> int:
++        """Checks if reboot is already in progress."""
++        if self.is_reset_ongoing:
++            return 1
++        return 0
++
++    def _parse_arguments(self, options) -> tuple[int, str]:
++        """Parses and validates the given arguments into a reset request."""
++        try:
++            raw = json.loads(options)
++        except ValueError as e:
++            logger.error("[%s]: Failed to parse factory reset request: %s", MOD_NAME, str(e))
++            return self.populate_reset_response(
++                reset_success=False,
++                detail="Failed to parse json formatted factory reset request into python dict.",
++            )
++
++        self.reset_request = {
++            "factoryOs": raw.get("factoryOs", raw.get("factory_os", False)),
++            "zeroFill": raw.get("zeroFill", raw.get("zero_fill", False)),
++            "retainCerts": raw.get("retainCerts", raw.get("retain_certs", False)),
++        }
++
++        if self.reset_request["factoryOs"] and self.reset_request["zeroFill"]:
++            return self.populate_reset_response(
++                reset_success=False,
++                zero_fill_unsupported=True,
++                detail="zero_fill operation is currently unsupported.",
++            )
++
++        if self.reset_request["factoryOs"] and self.reset_request["retainCerts"]:
++            logger.warning("%s: retain_certs is currently ignored.", MOD_NAME)
++
++        if self.reset_request["factoryOs"]:
++            return self.populate_reset_response(reset_success=True)
++
++        return self.populate_reset_response(
++            reset_success=False,
++            detail="No valid options specified.",
++        )
++
++    def _execute_factory_reset(self) -> int:
++        """Execute factory reset using the system reset-factory command."""
++        try:
++            logger.info("[%s]: Executing reset-factory command", MOD_NAME)
++            result = subprocess.run(
++                ["reset-factory"],
++                capture_output=True,
++                text=True,
++                timeout=60
++            )
++            
++            if result.returncode != 0:
++                logger.error("[%s]: reset-factory command failed: %s", MOD_NAME, result.stderr)
++                return 1
++
++            logger.info("[%s]: reset-factory command succeeded. System will reboot automatically.", MOD_NAME)
++            return 0
++
++        except subprocess.TimeoutExpired:
++            logger.error("[%s]: reset-factory command timed out", MOD_NAME)
++            return 1
++        except Exception as e:
++            logger.error("[%s]: Factory reset failed with exception: %s", MOD_NAME, str(e))
++            return 1
++
++    @host_service.method(
++        host_service.bus_name(MOD_NAME), in_signature="as", out_signature="is"
++    )
++    def issue_reset(self, options) -> tuple[int, str]:
++        """Issues the factory reset."""
++        logger.info("[%s]: Issuing reset from back end", MOD_NAME)
++
++        rc, resp = self._parse_arguments(options)
++        if rc:
++            return rc, resp
++
++        rc = self._check_reboot_in_progress()
++        if rc:
++            return self.populate_reset_response(
++                reset_success=False,
++                detail="Previous reset is ongoing.",
++            )
++
++        self.is_reset_ongoing = True
++
++        rc = self._execute_factory_reset()
++        if rc:
++            self.is_reset_ongoing = False
++            return self.populate_reset_response(
++                reset_success=False,
++                detail="Failed to execute factory reset.",
++            )
++
++        return self.populate_reset_response(reset_success=True)
++
++
++def register():
++    """Return the class name."""
++    return GnoiReset, MOD_NAME
+diff --git a/scripts/sonic-host-server b/scripts/sonic-host-server
+index eec8208..b6917ec 100755
+--- a/scripts/sonic-host-server
++++ b/scripts/sonic-host-server
+@@ -12,7 +12,7 @@ import dbus.service
+ import dbus.mainloop.glib
+ 
+ from gi.repository import GObject
+-from host_modules import config_engine, gcu, host_service, showtech, systemd_service, file_service, image_service, docker_service, reboot
++from host_modules import config_engine, gcu, host_service, showtech, systemd_service, file_service, image_service, docker_service, reboot, gnoi_reset
+ 
+ 
+ def register_dbus():
+@@ -26,7 +26,8 @@ def register_dbus():
+             'systemd': systemd_service.SystemdService('systemd'),
+             'image_service': image_service.ImageService('image_service'),
+             'docker_service': docker_service.DockerService('docker_service'),
+-            'file_stat': file_service.FileService('file')
++            'file_stat': file_service.FileService('file'),
++            'gnoi_reset': gnoi_reset.GnoiReset('gnoi_reset')
+             }
+     for mod_name, handler_class in mod_dict.items():
+         handlers[mod_name] = handler_class
+diff --git a/tests/gnoi_reset_test.py b/tests/gnoi_reset_test.py
+new file mode 100644
+index 0000000..094a991
+--- /dev/null
++++ b/tests/gnoi_reset_test.py
+@@ -0,0 +1,114 @@
++"""Tests for gnoi_reset."""
++
++import imp
++import os
++import sys
++import logging
++
++if sys.version_info >= (3, 3):
++    from unittest import mock
++else:
++    import mock
++
++test_path = os.path.dirname(os.path.abspath(__file__))
++sonic_host_service_path = os.path.dirname(test_path)
++host_modules_path = os.path.join(sonic_host_service_path, "host_modules")
++sys.path.insert(0, sonic_host_service_path)
++
++# Input requests based on gNOI CLI examples (snake_case and camelCase mix)
++VALID_RESET_REQUEST = '{"factory_os": true}'
++ZERO_FILL_REQUEST = '{"factory_os": true, "zero_fill": true}'
++RETAIN_CERTS_REQUEST = '{"factory_os": true, "retainCerts": true}'
++INVALID_RESET_REQUEST = '"factory_os": true, "zero_fill": true'
++
++imp.load_source("host_service", host_modules_path + "/host_service.py")
++imp.load_source("gnoi_reset", host_modules_path + "/gnoi_reset.py")
++from gnoi_reset import *
++
++
++class TestGnoiReset:
++    @classmethod
++    def setup_class(cls):
++        with mock.patch("gnoi_reset.super"):
++            cls.gnoi_reset_module = GnoiReset(MOD_NAME)
++
++    def test_zero_fill_unsupported(self):
++        result = self.gnoi_reset_module.issue_reset(ZERO_FILL_REQUEST)
++        assert result[0] == 1
++        assert isinstance(result[1], str)
++
++    def test_retain_certs_warning(self, caplog):
++        with caplog.at_level(logging.WARNING):
++            result = self.gnoi_reset_module.issue_reset(RETAIN_CERTS_REQUEST)
++            assert (
++                caplog.records[0].message
++                == "gnoi_reset: retain_certs is currently ignored."
++            )
++            assert result[0] == 1
++            assert result[1] == (
++                '{"reset_error": {"detail": "Failed to execute factory reset."}}'
++            )
++
++    def test_invalid_json_format(self):
++        result = self.gnoi_reset_module.issue_reset(INVALID_RESET_REQUEST)
++        assert result[0] == 1
++        assert isinstance(result[1], str)
++
++    def test_valid_request_unimplemented(self):
++        result = self.gnoi_reset_module.issue_reset(VALID_RESET_REQUEST)
++        assert result[0] == 1
++        assert result[1] == (
++            '{"reset_error": {"detail": "Failed to execute factory reset."}}'
++        )
++
++    def test_populate_reset_response_success(self):
++        _, response = self.gnoi_reset_module.populate_reset_response(reset_success=True)
++        assert response == '{"reset_success": {}}'
++
++    def test_populate_reset_response_other_error(self):
++        _, response = self.gnoi_reset_module.populate_reset_response(
++            reset_success=False,
++            detail="Generic failure."
++        )
++        assert response == (
++            '{"reset_error": {"detail": "Generic failure."}}'
++        )
++
++    def test_check_reboot_in_progress_true(self):
++        self.gnoi_reset_module.is_reset_ongoing = True
++        rc = self.gnoi_reset_module._check_reboot_in_progress()
++        assert rc == 1
++
++    def test_check_reboot_in_progress_false(self):
++        self.gnoi_reset_module.is_reset_ongoing = False
++        rc = self.gnoi_reset_module._check_reboot_in_progress()
++        assert rc == 0
++
++    @mock.patch("gnoi_reset.GnoiReset._execute_factory_reset", return_value=0)
++    @mock.patch("threading.Thread")
++    def test_execute_reboot_success(self, mock_thread_cls, mock_exec):
++        mock_thread_instance = mock.Mock()
++        mock_thread_cls.return_value = mock_thread_instance
++
++        rc = self.gnoi_reset_module._execute_factory_reset()
++
++        mock_exec.assert_called_once()
++        assert rc == 0
++
++    @mock.patch("gnoi_reset.GnoiReset._execute_factory_reset", return_value=1)
++    @mock.patch("threading.Thread", side_effect=RuntimeError)
++    def test_execute_reboot_runtime_error(self, mock_thread_cls, mock_exec):
++        self.gnoi_reset_module.is_reset_ongoing = True
++        rc = self.gnoi_reset_module._execute_factory_reset()
++        assert rc == 1
++        # _execute_factory_reset does not manage is_reset_ongoing,
++        # that logic is in issue_reset, so we only verify rc == 1
++
++    def test_register(self):
++        result = register()
++        assert result[0] == GnoiReset
++        assert result[1] == MOD_NAME
++
++    @classmethod
++    def teardown_class(cls):
++        print("TEARDOWN")
+-- 
+2.25.1
+
