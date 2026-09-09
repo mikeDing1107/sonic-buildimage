@@ -1,0 +1,151 @@
+From ba55a8c2576f8686a5bd570e3f93ad4d814f87c1 Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Wed, 9 Sep 2026 07:47:25 +0000
+Subject: [PATCH] enhance for factory reset
+
+---
+ host_modules/gnoi_reset.py | 27 +++++++++++++--------
+ tests/gnoi_reset_test.py   | 49 ++++++++++++++++++++------------------
+ 2 files changed, 43 insertions(+), 33 deletions(-)
+
+diff --git a/host_modules/gnoi_reset.py b/host_modules/gnoi_reset.py
+index b2f60b5..8cbf1fe 100644
+--- a/host_modules/gnoi_reset.py
++++ b/host_modules/gnoi_reset.py
+@@ -98,7 +98,7 @@ class GnoiReset(host_service.HostModule):
+                 text=True,
+                 timeout=60
+             )
+-            
++
+             if result.returncode != 0:
+                 logger.error("[%s]: reset-factory command failed: %s", MOD_NAME, result.stderr)
+                 return 1
+@@ -113,8 +113,18 @@ class GnoiReset(host_service.HostModule):
+             logger.error("[%s]: Factory reset failed with exception: %s", MOD_NAME, str(e))
+             return 1
+ 
++    def _async_reset_worker(self):
++        try:
++            rc = self._execute_factory_reset()
++            if rc != 0:
++                logger.error("[%s]: Async factory reset failed with rc=%d", MOD_NAME, rc)
++        except Exception as e:
++            logger.error("[%s]: Async factory reset worker crashed: %s", MOD_NAME, str(e))
++        finally:
++            self.is_reset_ongoing = False
++
+     @host_service.method(
+-        host_service.bus_name(MOD_NAME), in_signature="as", out_signature="is"
++        host_service.bus_name(MOD_NAME), in_signature="s", out_signature="is"
+     )
+     def issue_reset(self, options) -> tuple[int, str]:
+         """Issues the factory reset."""
+@@ -132,15 +142,12 @@ class GnoiReset(host_service.HostModule):
+             )
+ 
+         self.is_reset_ongoing = True
++        
++        reset_thread = threading.Thread(target=self._async_reset_worker, daemon=True)
++        reset_thread.start()
+ 
+-        rc = self._execute_factory_reset()
+-        if rc:
+-            self.is_reset_ongoing = False
+-            return self.populate_reset_response(
+-                reset_success=False,
+-                detail="Failed to execute factory reset.",
+-            )
+-
++        logger.info("[%s]: Factory reset initiated in background. Returning success to client.", MOD_NAME)
++        
+         return self.populate_reset_response(reset_success=True)
+ 
+ 
+diff --git a/tests/gnoi_reset_test.py b/tests/gnoi_reset_test.py
+index 094a991..5c94c88 100644
+--- a/tests/gnoi_reset_test.py
++++ b/tests/gnoi_reset_test.py
+@@ -1,5 +1,4 @@
+ """Tests for gnoi_reset."""
+-
+ import imp
+ import os
+ import sys
+@@ -44,10 +43,8 @@ class TestGnoiReset:
+                 caplog.records[0].message
+                 == "gnoi_reset: retain_certs is currently ignored."
+             )
+-            assert result[0] == 1
+-            assert result[1] == (
+-                '{"reset_error": {"detail": "Failed to execute factory reset."}}'
+-            )
++            assert result[0] == 0
++            assert result[1] == '{"reset_success": {}}'
+ 
+     def test_invalid_json_format(self):
+         result = self.gnoi_reset_module.issue_reset(INVALID_RESET_REQUEST)
+@@ -56,10 +53,8 @@ class TestGnoiReset:
+ 
+     def test_valid_request_unimplemented(self):
+         result = self.gnoi_reset_module.issue_reset(VALID_RESET_REQUEST)
+-        assert result[0] == 1
+-        assert result[1] == (
+-            '{"reset_error": {"detail": "Failed to execute factory reset."}}'
+-        )
++        assert result[0] == 0
++        assert result[1] == '{"reset_success": {}}'
+ 
+     def test_populate_reset_response_success(self):
+         _, response = self.gnoi_reset_module.populate_reset_response(reset_success=True)
+@@ -84,25 +79,33 @@ class TestGnoiReset:
+         rc = self.gnoi_reset_module._check_reboot_in_progress()
+         assert rc == 0
+ 
+-    @mock.patch("gnoi_reset.GnoiReset._execute_factory_reset", return_value=0)
+-    @mock.patch("threading.Thread")
+-    def test_execute_reboot_success(self, mock_thread_cls, mock_exec):
+-        mock_thread_instance = mock.Mock()
+-        mock_thread_cls.return_value = mock_thread_instance
+-
++    @mock.patch("gnoi_reset.subprocess.run")
++    def test_execute_factory_reset_success(self, mock_run):
++        mock_result = mock.Mock()
++        mock_result.returncode = 0
++        mock_run.return_value = mock_result
+         rc = self.gnoi_reset_module._execute_factory_reset()
+-
+-        mock_exec.assert_called_once()
++        mock_run.assert_called_once_with(
++            ["reset-factory"],
++            capture_output=True,
++            text=True,
++            timeout=60
++        )
+         assert rc == 0
+ 
+-    @mock.patch("gnoi_reset.GnoiReset._execute_factory_reset", return_value=1)
+-    @mock.patch("threading.Thread", side_effect=RuntimeError)
+-    def test_execute_reboot_runtime_error(self, mock_thread_cls, mock_exec):
+-        self.gnoi_reset_module.is_reset_ongoing = True
++    @mock.patch("gnoi_reset.subprocess.run")
++    def test_execute_factory_reset_failure(self, mock_run):
++        mock_result = mock.Mock()
++        mock_result.returncode = 1
++        mock_run.return_value = mock_result
++        rc = self.gnoi_reset_module._execute_factory_reset()
++        assert rc == 1
++
++    @mock.patch("gnoi_reset.subprocess.run")
++    def test_execute_factory_reset_exception(self, mock_run):
++        mock_run.side_effect = Exception("test error")
+         rc = self.gnoi_reset_module._execute_factory_reset()
+         assert rc == 1
+-        # _execute_factory_reset does not manage is_reset_ongoing,
+-        # that logic is in issue_reset, so we only verify rc == 1
+ 
+     def test_register(self):
+         result = register()
+-- 
+2.25.1
+
