@@ -11,6 +11,7 @@ sc_0011_fix_stp_netlink_oob.patch|src/sonic-stp
 sc_0012_fix_stp_pkt_buf.patch|src/sonic-stp
 sc_0013_stp_no_abort_on_zero_instances.patch|src/sonic-stp
 sc_0020_stp_ignore_duplicate_init_ready.patch|src/sonic-stp
+sc_0023_fix_stp_pvst_pkt_overflow.patch|src/sonic-stp
 sc_0021_align_stpmgrd_stp_ipc_layout.patch|src/sonic-swss
 sc_0022_stpmgrd_max_stp_instances_fallback.patch|src/sonic-swss
 sc_0010_fix_sfp_info_cannot_show.patch|platform/marvell-prestera/sonic-platform-marvell

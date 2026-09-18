@@ -1,0 +1,64 @@
+From 6d137de6305efb1f6a13274806e8a072e257249c Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sercomm.com>
+Date: Fri, 18 Sep 2026 10:14:34 +0800
+Subject: [PATCH] stp: fix stack buffer overflow when sending PVST BPDU
+
+STP_MAX_PKT_LEN is 68, but sizeof(PVST_CONFIG_BPDU) is 84 bytes and
+stp_pkt_tx_handler() adds 4 more for the VLAN tag => 88 bytes.
+
+stp_pkt_fill_tx_buf() copies the whole packet into the stack array
+"char send_buf[STP_MAX_PKT_LEN]", so it wrote up to 20 bytes past the
+end of send_buf[]. With _FORTIFY_SOURCE=2 glibc detects this in
+__memcpy_chk and kills the daemon:
+
+    *** buffer overflow detected ***: terminated
+    exited: stpd (terminated by SIGABRT (core dumped); not expected)
+
+Reproduced on the KaiTian board with a single-port loopback: the crash
+happens ~1.5s after the link goes up, i.e. when the first BPDU is sent.
+Standard STP BPDUs (72+4=76) overflowed as well, they just never got
+sent while ports stayed down.
+
+- raise STP_MAX_PKT_LEN to 256 (also fixes the RX path, which was
+  truncating 88 byte PVST frames with iov_len = STP_MAX_PKT_LEN)
+- reject oversized BPDUs in stp_pkt_tx_handler() instead of overflowing
+---
+ include/stp.h | 2 +-
+ stp/stp_pkt.c | 8 ++++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/include/stp.h b/include/stp.h
+index 1fba245..14faf14 100755
+--- a/include/stp.h
++++ b/include/stp.h
+@@ -73,7 +73,7 @@
+ #define STP_SIZEOF_CONFIG_BPDU 35
+ #define STP_SIZEOF_TCN_BPDU 4
+ #define STP_BULK_MESG_LENGTH 350
+-#define STP_MAX_PKT_LEN 68
++#define STP_MAX_PKT_LEN 256
+ 
+ #define g_stp_instances stp_global.max_instances
+ #define g_stp_active_instances stp_global.active_instances
+diff --git a/stp/stp_pkt.c b/stp/stp_pkt.c
+index 16217fa..14f47ad 100644
+--- a/stp/stp_pkt.c
++++ b/stp/stp_pkt.c
+@@ -226,6 +226,14 @@ int stp_pkt_tx_handler(uint32_t port_id, VLAN_ID vlan_id, char *buffer, uint16_t
+     if (tagged)
+         size += VLAN_HEADER_LEN;
+ 
++    /* never let an oversized BPDU (e.g. PVST, 88 bytes) overflow send_buf[] */
++    if (size > STP_MAX_PKT_LEN)
++    {
++        STPD_INCR_PKT_COUNT(port_id, pkt_tx_err);
++        STP_LOG_ERR("STP-BPDU too large: %u > %d", size, STP_MAX_PKT_LEN);
++        return -1;
++    }
++
+     memset(send_buf, 0, STP_MAX_PKT_LEN);
+     stp_pkt_fill_tx_buf(size, tagged?vlan_id:0, buffer, send_buf);
+ 
+-- 
+2.34.1
+
