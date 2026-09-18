@@ -1,0 +1,37 @@
+From db33dea89943ebf406239edd4d27b1ae8854df2d Mon Sep 17 00:00:00 2001
+From: Mike <mike@sercomm.com>
+Date: Thu, 17 Sep 2026 13:14:24 +0800
+Subject: [PATCH 4/5] stp: do not abort the daemon when stpmgrd reports 0 STP
+ instances
+
+---
+ stp/stp_mgr.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/stp/stp_mgr.c b/stp/stp_mgr.c
+index fa0ff08..79c7e03 100755
+--- a/stp/stp_mgr.c
++++ b/stp/stp_mgr.c
+@@ -92,10 +92,18 @@ struct event *stpmgr_libevent_create(struct event_base *base,
+  * SYNOPSIS
+  *	    initializes stp global data	
+  */
++#define STP_FALLBACK_MAX_INSTANCES 256
++
+ void stpmgr_init(UINT16 max_stp_instances)
+ {
+     if(max_stp_instances == 0)
+-        sys_assert(0);
++    {
++        /* stpmgrd must always report a usable count; 0 means the value was
++           never provisioned (STATE_DB STP|GLOBAL max_stp_inst missing).
++           Fall back instead of aborting the whole daemon. */
++        STP_LOG_CRITICAL("max_stp_instances=0, fall back to %d", STP_FALLBACK_MAX_INSTANCES);
++        max_stp_instances = STP_FALLBACK_MAX_INSTANCES;
++    }
+ 
+     if (stpdata_init_global_structures(max_stp_instances) == false)
+     {
+-- 
+2.34.1
+

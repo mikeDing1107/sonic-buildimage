@@ -1,0 +1,26 @@
+From e988faa474228eb4fd9b8ec709d4240c57623839 Mon Sep 17 00:00:00 2001
+From: Mike <mike@sercomm.com>
+Date: Thu, 17 Sep 2026 13:14:24 +0800
+Subject: [PATCH 3/5] stp: enlarge stp_pkt_dump() buffer (sprintf writes up to
+ 576 bytes)
+
+---
+ stp/stp_pkt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/stp/stp_pkt.c b/stp/stp_pkt.c
+index b22dd07..16217fa 100644
+--- a/stp/stp_pkt.c
++++ b/stp/stp_pkt.c
+@@ -157,7 +157,7 @@ int stp_pkt_sock_create(INTERFACE_NODE *intf_node)
+ 
+ static void stp_pkt_dump(INTERFACE_NODE *intf_node, VLAN_ID vlan_id, char * pkt, uint16_t pkt_len, bool is_rx)
+ {
+-    static char pkt_str[256];
++    static char pkt_str[1024];
+     char * pkt_parser = (char *)&pkt_str;
+     UINT32 pkt_count = is_rx ? STPD_GET_PKT_COUNT(intf_node->port_id, pkt_rx):STPD_GET_PKT_COUNT(intf_node->port_id, pkt_tx);
+     int i = 0;
+-- 
+2.34.1
+

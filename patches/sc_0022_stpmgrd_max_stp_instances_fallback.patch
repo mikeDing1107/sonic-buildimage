@@ -1,0 +1,65 @@
+From 5fb28b963e1bf3935d033b9ba135cfc988b0ae9f Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sercomm.com>
+Date: Thu, 17 Sep 2026 08:29:17 +0000
+Subject: [PATCH] stpmgrd: fall back to CONFIG_DB max_stp_instances when
+ STATE_DB is empty
+
+StpMgr::max_stp_instances is a plain uint16_t member that the constructor
+never initialises, and getStpMaxInstances() only ever assigns it from the
+STATE_DB STP|GLOBAL.max_stp_inst field.  In this build nothing populates
+that field: orchagent's StpOrch declares updateMaxStpInstance() but neither
+implements nor calls it, so the 60 x sleep(1) lookup always times out and
+stpmgrd hands an uninitialised value to stpd via STP_INIT_READY (observed
+stpd "max_instances = 21321" instead of the provisioned 2).
+
+Initialise the member to 0 and, when STATE_DB yields nothing, fall back to
+the value provisioned in CONFIG_DB STP|GLOBAL.max_stp_instances before the
+hard-coded STP_DEFAULT_MAX_INSTANCES default.
+---
+ cfgmgr/stpmgr.cpp | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/cfgmgr/stpmgr.cpp b/cfgmgr/stpmgr.cpp
+index 4e34e662..363d2a61 100644
+--- a/cfgmgr/stpmgr.cpp
++++ b/cfgmgr/stpmgr.cpp
+@@ -35,6 +35,8 @@ StpMgr::StpMgr(DBConnector *confDb, DBConnector *applDb, DBConnector *statDb,
+ 
+     stpGlobalTask = stpVlanTask = stpVlanPortTask = stpPortTask = false;
+ 
++    max_stp_instances = 0;
++
+     // Initialize all VLANs to Invalid instance
+     fill_n(m_vlanInstMap, MAX_VLANS, INVALID_INSTANCE);
+ 
+@@ -1100,6 +1102,27 @@ uint16_t StpMgr::getStpMaxInstances(void)
+         max_delay--;
+     }
+ 
++    /* STATE_DB STP|GLOBAL.max_stp_inst is never written in this build
++       (orchagent StpOrch declares updateMaxStpInstance() but does not
++       implement or call it), so the lookup above always times out and the
++       member would otherwise be left uninitialised. Fall back to the value
++       provisioned in CONFIG_DB before the hard-coded default. */
++    if(max_stp_instances == 0)
++    {
++        vmEntry.clear();
++        if (m_cfgStpGlobalTable.get(key, vmEntry))
++        {
++            for (auto entry : vmEntry)
++            {
++                if (entry.first == "max_stp_instances")
++                {
++                    max_stp_instances = (uint16_t)stoi(entry.second.c_str());
++                    SWSS_LOG_NOTICE("max stp instance %d (CONFIG_DB)", max_stp_instances);
++                }
++            }
++        }
++    }
++
+     if(max_stp_instances == 0)
+     {
+         max_stp_instances = STP_DEFAULT_MAX_INSTANCES;
+-- 
+2.25.1
+

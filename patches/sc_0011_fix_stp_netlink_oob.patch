@@ -1,0 +1,47 @@
+From 8ad63b62b5e20e63e08a5768d1b1c5f4a6607552 Mon Sep 17 00:00:00 2001
+From: Mike <mike@sercomm.com>
+Date: Thu, 17 Sep 2026 13:14:24 +0800
+Subject: [PATCH 2/5] stp: fix stp_netlink_request() reading 4 bytes past a 16
+ byte stack buffer
+
+---
+ stp/stp_netlink.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/stp/stp_netlink.c b/stp/stp_netlink.c
+index 127bb8a..9ed6cb9 100644
+--- a/stp/stp_netlink.c
++++ b/stp/stp_netlink.c
+@@ -95,18 +95,22 @@ int stp_netlink_request(int nl_fd)
+ {
+     int ret = 0;
+ 
+-    struct nlmsghdr nh;
++    struct {
++        struct nlmsghdr nh;
++        struct rtgenmsg  rtg;
++    } req;
+     struct iovec iov;
+     struct sockaddr_nl dst;
+     struct msghdr msg;
+ 
+-    nh.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg));
+-    nh.nlmsg_type = RTM_GETLINK;
+-    nh.nlmsg_flags = (NLM_F_REQUEST | NLM_F_DUMP);
+-    nh.nlmsg_pid = getpid();
++    req.nh.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg));
++    req.nh.nlmsg_type = RTM_GETLINK;
++    req.nh.nlmsg_flags = (NLM_F_REQUEST | NLM_F_DUMP);
++    req.nh.nlmsg_pid = getpid();
++    req.rtg.rtgen_family = AF_PACKET;
+ 
+-    iov.iov_base = &nh;
+-    iov.iov_len  = nh.nlmsg_len;
++    iov.iov_base = &req;
++    iov.iov_len  = req.nh.nlmsg_len;
+ 
+     memset(&dst, 0, sizeof(struct sockaddr_nl));
+     dst.nl_family = AF_NETLINK;
+-- 
+2.34.1
+

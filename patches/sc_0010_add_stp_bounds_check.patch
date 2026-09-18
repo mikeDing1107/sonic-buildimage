@@ -1,0 +1,82 @@
+From 7db07c74fa54f8674b113395bdc7bf25a54f7f9f Mon Sep 17 00:00:00 2001
+From: Mike <mike@sercomm.com>
+Date: Thu, 17 Sep 2026 13:14:24 +0800
+Subject: [PATCH 1/5] stp: add msgtype_str MST entries, bounds checks and
+ stp_index range check
+
+---
+ stp/stp_data.c |  6 ++++++
+ stp/stp_mgr.c  | 12 ++++++++++--
+ stp/stp_util.c |  3 ++-
+ 3 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/stp/stp_data.c b/stp/stp_data.c
+index 4600950..e50f77b 100755
+--- a/stp/stp_data.c
++++ b/stp/stp_data.c
+@@ -180,6 +180,12 @@ int stpdata_init_class(STP_INDEX stp_index, VLAN_ID vlan_id)
+ 
+     if (stp_index != STP_INDEX_INVALID)
+     {
++        if ((UINT32)stp_index >= (UINT32)g_stp_instances)
++        {
++            STP_LOG_ERR("stp_index %d out of range (instances %d)", stp_index, g_stp_instances);
++            return -1;
++        }
++
+         stp_class = GET_STP_CLASS(stp_index);
+         
+         if (stp_class->state != STP_CLASS_FREE)
+diff --git a/stp/stp_mgr.c b/stp/stp_mgr.c
+index d1cb403..fa0ff08 100755
+--- a/stp/stp_mgr.c
++++ b/stp/stp_mgr.c
+@@ -29,6 +29,10 @@ char msgtype_str[][64] = {
+     "STP_PORT_CONFIG",
+     "STP_VLAN_MEM_CONFIG",
+     "STP_STPCTL_MSG",
++    "STP_MST_GLOBAL_CONFIG",
++    "STP_MST_INST_CONFIG",
++    "STP_MST_VLAN_PORT_LIST_CONFIG",
++    "STP_MST_INST_PORT_CONFIG",
+     "STP_MAX_MSG"
+ };
+ 
+@@ -1791,14 +1795,18 @@ static void stpmgr_process_vlan_mem_config_msg(void *msg)
+ static void stpmgr_process_ipc_msg(STP_IPC_MSG *msg, int len, struct sockaddr_un client_addr)
+ {
+     int ret;
+-    STP_LOG_INFO("rcvd %s msg type", msgtype_str[msg->msg_type]);
++    STP_LOG_INFO("rcvd %s msg type",
++                (msg->msg_type >= 0 && msg->msg_type < STP_MAX_MSG) ?
++                msgtype_str[msg->msg_type] : "STP_INVALID_MSG");
+ 
+     /* Temp code until warm boot is handled */
+     if(msg->msg_type != STP_INIT_READY && msg->msg_type != STP_STPCTL_MSG)
+     {
+         if(g_max_stp_port == 0)
+         {
+-            STP_LOG_ERR("max port invalid ignore msg type %s", msgtype_str[msg->msg_type]);
++            STP_LOG_ERR("max port invalid ignore msg type %s",
++                    (msg->msg_type >= 0 && msg->msg_type < STP_MAX_MSG) ?
++                    msgtype_str[msg->msg_type] : "STP_INVALID_MSG");
+             return;
+         }
+     }
+diff --git a/stp/stp_util.c b/stp/stp_util.c
+index dfe5b13..24fe843 100755
+--- a/stp/stp_util.c
++++ b/stp/stp_util.c
+@@ -851,7 +851,8 @@ void stptimer_sync_port_class(STP_CLASS *stp_class, STP_PORT_CLASS * stp_port)
+     if(ifname == NULL)
+         return;
+ 
+-    strcpy(stp_vlan_intf.if_name, ifname);
++    strncpy(stp_vlan_intf.if_name, ifname, IFNAMSIZ - 1);
++    stp_vlan_intf.if_name[IFNAMSIZ - 1] = '\0';
+ 
+     stp_vlan_intf.vlan_id = stp_class->vlan_id;
+ 
+-- 
+2.34.1
+

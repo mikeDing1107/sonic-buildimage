@@ -1,0 +1,63 @@
+From 6091edb0413bcb9c015655fe85096f096a7b6b17 Mon Sep 17 00:00:00 2001
+From: Mike <mike@sercomm.com>
+Date: Thu, 17 Sep 2026 13:14:24 +0800
+Subject: [PATCH 5/5] stp: make STP_INIT_READY handling idempotent (keep port
+ db on stpmgrd restart)
+
+---
+ stp/stp_intf.c | 11 ++++++++++-
+ stp/stp_mgr.c  | 16 ++++++++++++++++
+ 2 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/stp/stp_intf.c b/stp/stp_intf.c
+index 63bf05f..cf9172c 100755
+--- a/stp/stp_intf.c
++++ b/stp/stp_intf.c
+@@ -581,7 +581,16 @@ int stp_intf_init_po_id_pool()
+ int stp_intf_event_mgr_init(void)
+ {
+     struct event *nl_event = 0;
+-    
++
++    /* One shot: called only from the STP_INIT_READY handler. Calling it again
++       would reset g_max_stp_port (killing every later config message) and
++       leak the netlink/ioctl sockets. */
++    if (g_stpd_port_init_done)
++    {
++        STP_LOG_INFO("intf db already initialized (max port %d), skip re-init", g_max_stp_port);
++        return 0;
++    }
++
+     if((g_stpd_ioctl_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+         sys_assert(0);
+ 
+diff --git a/stp/stp_mgr.c b/stp/stp_mgr.c
+index 79c7e03..fd410e4 100755
+--- a/stp/stp_mgr.c
++++ b/stp/stp_mgr.c
+@@ -1824,6 +1824,22 @@ static void stpmgr_process_ipc_msg(STP_IPC_MSG *msg, int len, struct sockaddr_un
+         case STP_INIT_READY:
+             {
+                 STP_INIT_READY_MSG *pmsg = (STP_INIT_READY_MSG *)msg->data;
++
++                /* stpmgrd re-sends INIT_READY every time it (re)starts. The
++                   handler below is NOT idempotent: stp_intf_event_mgr_init()
++                   resets g_max_stp_port to 0 and rebuilds the port db, so a
++                   second INIT_READY while the netlink port dump fails leaves
++                   g_max_stp_port == 0 and every later config message is
++                   silently dropped (see the STP_INVALID_MSG/max port check
++                   above). Ignore duplicates. */
++                if (g_stpd_port_init_done)
++                {
++                    STP_LOG_INFO("INIT_READY ignored, intf db already built "
++                                 "(max port %d, instances %d, msg max instances %d)",
++                                 g_max_stp_port, g_stp_instances, pmsg->max_stp_instances);
++                    break;
++                }
++
+                 /* All ports are initialized in the system. Now build IF DB in STP */
+                 ret = stp_intf_event_mgr_init();
+                 if(ret == -1)
+-- 
+2.34.1
+
