@@ -22,5 +22,4 @@ sc_0022_stp_ignore_duplicate_init_ready.patch|src/sonic-stp
 sc_0023_fix_stp_pvst_pkt_overflow.patch|src/sonic-stp
 sc_0024_align_stpmgrd_stp_ipc_layout.patch|src/sonic-swss
 sc_0025_stpmgrd_max_stp_instances_fallback.patch|src/sonic-swss
-sc_0026_fix_show_temperature_fail.patch|src/sonic-platform-daemons
-sc_0027_support_show_temperature.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_0026_support_show_temperature.patch|platform/marvell-prestera/sonic-platform-marvell
