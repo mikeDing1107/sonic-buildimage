@@ -6,6 +6,14 @@ sc_0005_add_sonic_config_and_show_cpu_monitor.patch|src/sonic-utilities
 sc_0007_add_customized_info_at_show_cli.patch|src/sonic-utilities
 sc_0008_add_sonic_config_and_show_ucentral.patch|src/sonic-utilities
 sc_0009_add_50g_stp_support.patch|src/sonic-stp
+sc_0010_fix_sfp_info_cannot_show.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_0011_import_more_yang_model.patch|src/sonic-mgmt-common
+sc_0012_fix_show_version_not_in_time.patch|src/sonic-utilities
+sc_0013_add_reboot_and_reset_button.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_0014_gnmi_support_factory_reset.patch|src/sonic-gnmi
+sc_0015_host_services_support_factory_reset.patch|src/sonic-host-services
+sc_0016_host_services_enhance_factory_reset.patch|src/sonic-host-services
+sc_0017_gnmi_support_config_save.patch|src/sonic-gnmi
 sc_0018_add_stp_bounds_check.patch|src/sonic-stp
 sc_0019_fix_stp_netlink_oob.patch|src/sonic-stp
 sc_0020_fix_stp_pkt_buf.patch|src/sonic-stp
@@ -14,11 +22,3 @@ sc_0022_stp_ignore_duplicate_init_ready.patch|src/sonic-stp
 sc_0023_fix_stp_pvst_pkt_overflow.patch|src/sonic-stp
 sc_0024_align_stpmgrd_stp_ipc_layout.patch|src/sonic-swss
 sc_0025_stpmgrd_max_stp_instances_fallback.patch|src/sonic-swss
-sc_0010_fix_sfp_info_cannot_show.patch|platform/marvell-prestera/sonic-platform-marvell
-sc_1011_import_more_yang_model.patch|src/sonic-mgmt-common
-sc_1012_fix_show_version_not_in_time.patch|src/sonic-utilities
-sc_1013_add_reboot_and_reset_button.patch|platform/marvell-prestera/sonic-platform-marvell
-sc_1014_gnmi_support_factory_reset.patch|src/sonic-gnmi
-sc_1015_host_services_support_factory_reset.patch|src/sonic-host-services
-sc_1016_host_services_enhance_factory_reset.patch|src/sonic-host-services
-sc_1017_gnmi_support_config_save.patch|src/sonic-gnmi
