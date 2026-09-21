@@ -712,6 +712,11 @@
           <ASKL1plt:ifMode ASKL1plt:type="interface-mode-type">SGMII</ASKL1plt:ifMode>
           <ASKL1plt:speed ASKL1plt:type="port-speed-type">1G</ASKL1plt:speed>
         </ASKL1plt:IfModeSpeedList-list>
+        <ASKL1plt:IfModeSpeedList-list>
+          <ASKL1plt:ifMode ASKL1plt:type="interface-mode-type">CR4</ASKL1plt:ifMode>
+          <ASKL1plt:speed ASKL1plt:type="port-speed-type">100G</ASKL1plt:speed>
+          <ASKL1plt:fec ASKL1plt:type="fec-type">rs_544_514_enabled</ASKL1plt:fec>
+        </ASKL1plt:IfModeSpeedList-list>
         <ASKL1plt:APIfModeSpeedList-list>
           <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">KR4</ASKL1plt:APifMode>
           <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">100G</ASKL1plt:APspeed>
@@ -789,6 +794,12 @@
           <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">1G</ASKL1plt:APspeed>
           <ASKL1plt:APfecSupport ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecSupport>
           <ASKL1plt:APfecRequest ASKL1plt:type="fec-type">disabled</ASKL1plt:APfecRequest>
+        </ASKL1plt:APIfModeSpeedList-list>
+        <ASKL1plt:APIfModeSpeedList-list>
+          <ASKL1plt:APifMode ASKL1plt:type="interface-mode-type">CR4</ASKL1plt:APifMode>
+          <ASKL1plt:APspeed ASKL1plt:type="port-speed-type">100G</ASKL1plt:APspeed>
+          <ASKL1plt:APfecSupport ASKL1plt:type="fec-type">both_enabled</ASKL1plt:APfecSupport>
+          <ASKL1plt:APfecRequest ASKL1plt:type="fec-type">both_enabled</ASKL1plt:APfecRequest>
         </ASKL1plt:APIfModeSpeedList-list>
       </ASKL1plt:ifModeNameList>
       <ASKL1plt:ifModeNameList>
