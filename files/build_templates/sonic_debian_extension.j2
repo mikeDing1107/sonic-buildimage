@@ -1062,8 +1062,10 @@ sudo rm -f ./fsroot-marvell-prestera/ucentral-client_1.0_arm64.deb
 sudo mkdir $FILESYSTEM_ROOT/etc/sercomm
 sudo cp sc_build/binary/sc_gpio $FILESYSTEM_ROOT/etc/sercomm
 sudo cp sc_build/binary/clear_led $FILESYSTEM_ROOT/etc/sercomm
+sudo cp sc_build/binary/fan $FILESYSTEM_ROOT/etc/sercomm
 sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/sc_gpio
 sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/clear_led
+sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/fan
 
 
 # Copy service scripts (swss, syncd, bgp, teamd, lldp, radv)
