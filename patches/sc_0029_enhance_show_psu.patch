@@ -1,0 +1,68 @@
+From e17fc5e2952681657823aedb9bedd4643cdda78d Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Wed, 23 Sep 2026 02:56:41 +0000
+Subject: [PATCH] enhance show platform psu
+
+---
+ rd98dx45xx_cn9131/sonic_platform/psu.py | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/rd98dx45xx_cn9131/sonic_platform/psu.py b/rd98dx45xx_cn9131/sonic_platform/psu.py
+index 55af3f5..7ab4dfc 100644
+--- a/rd98dx45xx_cn9131/sonic_platform/psu.py
++++ b/rd98dx45xx_cn9131/sonic_platform/psu.py
+@@ -28,8 +28,8 @@ class Psu(PsuBase):
+         self.index = psu_index
+         self._data_cache = {}
+         self._cache_timestamp = 0
+-        # Do not call _update_cache() here. Defer to first access to avoid 
+-        # initialization failures if I2C/sensors are not ready at boot.
++        self._ever_seen = False
++        self._chip_model = None
+ 
+     def _ensure_cache_fresh(self):
+         """
+@@ -60,6 +60,11 @@ class Psu(PsuBase):
+             cache = {}
+             for line in result.stdout.strip().split('\n'):
+                 line = line.strip()
++                if line.startswith('Chip:'):
++                    chip_match = re.match(r'^Chip:\s*(\S+)', line)
++                    if chip_match:
++                        chip_model = chip_match.group(1)
++                    continue
+                 if '=' not in line:
+                     continue
+                 key_part, value_part = line.split('=', 1)
+@@ -68,6 +73,9 @@ class Psu(PsuBase):
+                 if num_match:
+                     cache[key] = float(num_match.group(1))
+             self._data_cache = cache
++            self._ever_seen = True
++            if chip_model is not None:
++                self._chip_model = chip_model
+         except Exception as e:
+             self._data_cache = {}
+ 
+@@ -83,7 +91,7 @@ class Psu(PsuBase):
+         Returns True if valid sensor data can be read.
+         """
+         self._ensure_cache_fresh()
+-        return bool(self._data_cache)
++        return self._ever_seen
+ 
+     def get_powergood_status(self):
+         """
+@@ -164,7 +172,8 @@ class Psu(PsuBase):
+         """
+         Retrieves the model number (or part number) of the PSU.
+         """
+-        return "INA700-PSU"
++        self._ensure_cache_fresh()
++        return self._chip_model if self._chip_model else "N/A"
+ 
+     def get_serial(self):
+         """
+-- 
+2.25.1
+
