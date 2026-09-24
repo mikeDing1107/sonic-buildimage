@@ -1,0 +1,13 @@
+[Unit]
+Description=Sercomm LED Ready Indicator (Solid Green)
+After=swss.service database.service bgp.service teamd.service syncd.service
+After=network-online.target multi-user.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sc_led 1 green stable
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

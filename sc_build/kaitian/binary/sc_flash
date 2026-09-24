@@ -1,0 +1,122 @@
+#!/usr/bin/python3
+"""
+sc_flash - Unified Flash Engine for LP5012
+Usage: sc_flash <led_id> <interval_ms>
+  interval_ms=0 → stop flash & turn off LED (single-LED only)
+  interval_ms>0 → start/restart flash at given interval
+Examples:
+  sc_flash 1 500
+  sc_flash 1 0
+"""
+import sys, os, time, signal, subprocess
+
+I2C_BUS = 3
+I2C_ADDR = 0x17
+GPIO_TOOL = "/usr/local/bin/sc_gpio"
+PID_DIR = "/var/run/sc_flash"
+BRIGHTNESS = 0xFF
+
+GROUP_BRIGHTNESS = {1: [0x07, 0x08], 2: [0x0A], 3: [0x09]}
+PWM_REGS = {
+    1: [0x0B, 0x0E, 0x0F, 0x10],
+    2: [0x0D, 0x14, 0x15, 0x16],
+    3: [0x0C, 0x11, 0x12, 0x13],
+}
+
+def i2c_set(reg, val):
+    subprocess.run(["i2cset", "-y", str(I2C_BUS), hex(I2C_ADDR), hex(reg), hex(val)],
+                   capture_output=True)
+
+def gpio_enable():
+    if os.path.exists(GPIO_TOOL):
+        subprocess.run([GPIO_TOOL, "dir", "38", "1"], capture_output=True)
+        subprocess.run([GPIO_TOOL, "dat", "38", "0"], capture_output=True)
+
+def init_lp5012():
+    i2c_set(0x00, 0x40)
+
+def clear_single_led(led_id):
+    for reg in GROUP_BRIGHTNESS[led_id]:
+        i2c_set(reg, 0x00)
+    for reg in PWM_REGS[led_id]:
+        i2c_set(reg, 0x00)
+
+def stop_flash(led_id):
+    pid_file = os.path.join(PID_DIR, f"led{led_id}.pid")
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, signal.SIGTERM)
+            time.sleep(0.1)
+            try:
+                os.kill(pid, 0)
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
+        except (ValueError, OSError):
+            pass
+        finally:
+            try: os.remove(pid_file)
+            except OSError: pass
+
+def main():
+    if len(sys.argv) != 3:
+        print(__doc__); sys.exit(1)
+    try:
+        led_id = int(sys.argv[1])
+        interval = int(sys.argv[2])
+    except ValueError:
+        print("Error: arguments must be integers"); sys.exit(1)
+    if led_id not in (1, 2, 3):
+        print("Error: led_id must be 1/2/3"); sys.exit(1)
+    if interval < 0 or interval > 10000:
+        print("Error: interval must be 0-10000"); sys.exit(1)
+
+    gpio_enable()
+    init_lp5012()
+    stop_flash(led_id)
+
+    if interval == 0:
+        clear_single_led(led_id)
+        print(f"LED {led_id}: flash stopped, turned off")
+        return
+
+    interval = max(50, interval)
+    os.makedirs(PID_DIR, exist_ok=True)
+    pid = os.fork()
+    if pid > 0:
+        with open(os.path.join(PID_DIR, f"led{led_id}.pid"), 'w') as f:
+            f.write(str(pid))
+        print(f"LED {led_id}: flash started ({interval}ms) [PID={pid}]")
+        return
+
+    os.setsid()
+    devnull = os.open(os.devnull, os.O_RDWR)
+    for fd in [0, 1, 2]: os.dup2(devnull, fd)
+    os.close(devnull)
+
+    grp_regs = GROUP_BRIGHTNESS[led_id]
+    state = False
+    interval_sec = interval / 1000.0
+
+    def cleanup(*_):
+        clear_single_led(led_id)
+        try: os.remove(os.path.join(PID_DIR, f"led{led_id}.pid"))
+        except: pass
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, cleanup)
+    signal.signal(signal.SIGINT, cleanup)
+
+    try:
+        while True:
+            state = not state
+            val = BRIGHTNESS if state else 0x00
+            for r in grp_regs:
+                i2c_set(r, val)
+            time.sleep(interval_sec)
+    except: cleanup()
+
+if __name__ == '__main__':
+    main()

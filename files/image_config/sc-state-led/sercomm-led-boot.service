@@ -1,0 +1,14 @@
+[Unit]
+Description=Sercomm Boot LED Indicator (Early Boot)
+DefaultDependencies=no
+Before=sysinit.target shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sc_led 1 green flash
+ExecStart=/usr/local/bin/sc_led 2 off
+ExecStart=/usr/local/bin/sc_led 3 off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target
