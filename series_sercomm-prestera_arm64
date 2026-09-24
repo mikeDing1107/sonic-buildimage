@@ -27,3 +27,5 @@ sc_0027_support_show_fan.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0028_support_show_psu.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0029_enhance_show_psu.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0030_change_binary_catalog_and_name.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_0031_add_reset_button_led_spec.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_0032_add_upgrade_led_spec.patch|src/sonic-utilities

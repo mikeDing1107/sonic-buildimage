@@ -1,0 +1,132 @@
+#!/usr/bin/python3
+"""
+sc_led - Sercomm LED Control Tool for LP5012 (i2c-3, 0x17)
+Usage: sc_led <led_id> <color> <mode> [interval_ms]
+  led_id  : 1, 2, 3
+  color   : red, green, blue, yellow, white, off
+  mode    : stable, flash
+  interval: flash interval in ms (default 500)
+Examples:
+  sc_led 1 green stable
+  sc_led 2 red flash 1000
+  sc_led 3 off
+"""
+import sys, os, subprocess, time
+
+I2C_BUS = 3
+I2C_ADDR = 0x17
+GPIO_TOOL = "/usr/local/bin/sc_gpio"
+SC_FLASH = "/usr/local/bin/sc_flash"
+BRIGHTNESS = 0xFF
+
+GROUP_BRIGHTNESS = {
+    1: {'white': 0x07, 'rgb': 0x08},
+    2: {'all': 0x0A},
+    3: {'all': 0x09},
+}
+PWM_REGS = {
+    1: {'white': 0x0B, 'red': 0x0E, 'green': 0x0F, 'blue': 0x10},
+    2: {'white': 0x0D, 'red': 0x14, 'green': 0x15, 'blue': 0x16},
+    3: {'white': 0x0C, 'red': 0x11, 'green': 0x12, 'blue': 0x13},
+}
+COLOR_CHANNELS = {
+    'red': ['red'], 'green': ['green'], 'blue': ['blue'],
+    'yellow': ['green', 'red'], 'white': ['white'],
+}
+
+def i2c_set(reg, val):
+    cmd = ["i2cset", "-y", str(I2C_BUS), hex(I2C_ADDR), hex(reg), hex(val)]
+    ret = subprocess.run(cmd, capture_output=True)
+    if ret.returncode != 0:
+        print(f"Error: i2cset failed: {' '.join(cmd)}")
+        sys.exit(1)
+
+def gpio_enable():
+    if os.path.exists(GPIO_TOOL):
+        subprocess.run([GPIO_TOOL, "dir", "38", "1"], capture_output=True)
+        subprocess.run([GPIO_TOOL, "dat", "38", "0"], capture_output=True)
+
+def init_lp5012():
+    i2c_set(0x00, 0x40)
+
+def clear_single_led(led_id):
+    if led_id == 1:
+        i2c_set(0x07, 0x00); i2c_set(0x08, 0x00)
+    elif led_id == 2:
+        i2c_set(0x09, 0x00)
+    elif led_id == 3:
+        i2c_set(0x0A, 0x00)
+    for reg in PWM_REGS[led_id].values():
+        i2c_set(reg, 0x00)
+
+def set_led_on(led_id, color):
+    channels = COLOR_CHANNELS[color]
+    pwm = PWM_REGS[led_id]
+    grp = GROUP_BRIGHTNESS[led_id]
+    for ch in channels:
+        i2c_set(pwm[ch], BRIGHTNESS)
+    if led_id == 1:
+        if 'white' in channels:
+            i2c_set(grp['white'], BRIGHTNESS)
+        else:
+            i2c_set(grp['rgb'], BRIGHTNESS)
+    else:
+        i2c_set(grp['all'], BRIGHTNESS)
+
+def call_sc_flash(led_id, interval):
+    if not os.path.exists(SC_FLASH):
+        print(f"Error: {SC_FLASH} not found")
+        sys.exit(1)
+    ret = subprocess.run([SC_FLASH, str(led_id), str(interval)], capture_output=True, text=True)
+    if ret.stdout.strip():
+        print(ret.stdout.strip())
+    if ret.returncode != 0:
+        print(f"Error: sc_flash failed: {ret.stderr.strip()}")
+        sys.exit(1)
+
+def main():
+    if len(sys.argv) < 3:
+        print(__doc__); sys.exit(1)
+    try:
+        led_id = int(sys.argv[1])
+    except ValueError:
+        print("Error: led_id must be integer"); sys.exit(1)
+    if led_id not in (1, 2, 3):
+        print("Error: led_id must be 1/2/3"); sys.exit(1)
+
+    color = sys.argv[2].lower()
+    gpio_enable()
+    init_lp5012()
+
+    call_sc_flash(led_id, 0)
+    time.sleep(0.05)
+
+    if color == 'off':
+        print(f"LED {led_id}: OFF")
+        return
+
+    if color not in COLOR_CHANNELS:
+        print(f"Error: color must be one of {list(COLOR_CHANNELS.keys()) + ['off']}")
+        sys.exit(1)
+    if len(sys.argv) < 4:
+        print("Error: missing mode (stable/flash)"); sys.exit(1)
+
+    mode = sys.argv[3].lower()
+    if mode not in ('stable', 'flash'):
+        print("Error: mode must be 'stable' or 'flash'"); sys.exit(1)
+
+    if mode == 'stable':
+        set_led_on(led_id, color)
+        print(f"LED {led_id}: {color} stable")
+    elif mode == 'flash':
+        interval = 500
+        if len(sys.argv) >= 5:
+            try:
+                interval = max(50, int(sys.argv[4]))
+            except ValueError:
+                print("Error: interval must be integer (ms)"); sys.exit(1)
+        set_led_on(led_id, color)
+        call_sc_flash(led_id, interval)
+
+if __name__ == '__main__':
+    main()

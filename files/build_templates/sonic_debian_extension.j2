@@ -1058,6 +1058,17 @@ sudo cp sc_build/kaitian/binary/ucentral-client_1.0_arm64.deb ./fsroot-marvell-p
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT dpkg -i ucentral-client_1.0_arm64.deb
 sudo rm -f ./fsroot-marvell-prestera/ucentral-client_1.0_arm64.deb
 
+#Support state led spec
+sudo cp $IMAGE_CONFIGS/sc-state-led/sercomm-led-boot.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM/
+sudo cp $IMAGE_CONFIGS/sc-state-led/sercomm-led-ready.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM/
+sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable sercomm-led-boot.service
+sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable sercomm-led-ready.service
+
+sudo cp sc_build/kaitian/binary/sc_led $FILESYSTEM_ROOT/usr/local/bin
+sudo cp sc_build/kaitian/binary/sc_flash $FILESYSTEM_ROOT/usr/local/bin
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/sc_led
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/sc_flash
+
 #Copy led app and scripts
 sudo cp sc_build/kaitian/binary/sc_gpio $FILESYSTEM_ROOT/usr/local/bin
 sudo cp sc_build/kaitian/binary/sc_clear_led $FILESYSTEM_ROOT/usr/local/bin
