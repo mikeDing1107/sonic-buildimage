@@ -26,3 +26,4 @@ sc_0026_support_show_temperature.patch|platform/marvell-prestera/sonic-platform-
 sc_0027_support_show_fan.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0028_support_show_psu.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0029_enhance_show_psu.patch|platform/marvell-prestera/sonic-platform-marvell
+sc_0030_change_binary_catalog_and_name.patch|platform/marvell-prestera/sonic-platform-marvell
