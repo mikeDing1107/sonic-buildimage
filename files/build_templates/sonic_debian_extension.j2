@@ -1054,20 +1054,19 @@ sudo LANG=C chroot $FILESYSTEM_ROOT umount -lf /sys
 {% endif %}
 
 #install ucentral docker image
-sudo cp sc_build/binary/ucentral-client_1.0_arm64.deb ./fsroot-marvell-prestera/
+sudo cp sc_build/kaitian/binary/ucentral-client_1.0_arm64.deb ./fsroot-marvell-prestera/
 sudo LANG=C DEBIAN_FRONTEND=noninteractive chroot $FILESYSTEM_ROOT dpkg -i ucentral-client_1.0_arm64.deb
 sudo rm -f ./fsroot-marvell-prestera/ucentral-client_1.0_arm64.deb
 
 #Copy led app and scripts
-sudo mkdir $FILESYSTEM_ROOT/etc/sercomm
-sudo cp sc_build/binary/sc_gpio $FILESYSTEM_ROOT/etc/sercomm
-sudo cp sc_build/binary/clear_led $FILESYSTEM_ROOT/etc/sercomm
-sudo cp sc_build/binary/fan $FILESYSTEM_ROOT/etc/sercomm
-sudo cp sc_build/binary/current-sensor $FILESYSTEM_ROOT/etc/sercomm
-sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/sc_gpio
-sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/clear_led
-sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/fan
-sudo chmod +x $FILESYSTEM_ROOT/etc/sercomm/current-sensor
+sudo cp sc_build/kaitian/binary/sc_gpio $FILESYSTEM_ROOT/usr/local/bin
+sudo cp sc_build/kaitian/binary/sc_clear_led $FILESYSTEM_ROOT/usr/local/bin
+sudo cp sc_build/kaitian/binary/sc_fan $FILESYSTEM_ROOT/usr/local/bin
+sudo cp sc_build/kaitian/binary/sc_psu $FILESYSTEM_ROOT/usr/local/bin
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/sc_gpio
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/sc_clear_led
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/sc_fan
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/sc_psu
 
 
 # Copy service scripts (swss, syncd, bgp, teamd, lldp, radv)
