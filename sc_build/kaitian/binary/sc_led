@@ -50,13 +50,9 @@ def init_lp5012():
     i2c_set(0x00, 0x40)
 
 def clear_single_led(led_id):
-    if led_id == 1:
-        i2c_set(0x07, 0x00); i2c_set(0x08, 0x00)
-    elif led_id == 2:
-        i2c_set(0x09, 0x00)
-    elif led_id == 3:
-        i2c_set(0x0A, 0x00)
-    for reg in PWM_REGS[led_id].values():
+    for reg in GROUP_BRIGHTNESS[led_id]:
+        i2c_set(reg, 0x00)
+    for reg in PWM_REGS[led_id]:
         i2c_set(reg, 0x00)
 
 def set_led_on(led_id, color):
