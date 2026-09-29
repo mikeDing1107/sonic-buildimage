@@ -1,0 +1,33 @@
+From 3eaa8dbd867e8e79677fea43b99e6d4d57090d0e Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Thu, 24 Sep 2026 07:19:45 +0000
+Subject: [PATCH] add upgrade led spec
+
+---
+ sonic_installer/main.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sonic_installer/main.py b/sonic_installer/main.py
+index 6a445504..9247a409 100644
+--- a/sonic_installer/main.py
++++ b/sonic_installer/main.py
+@@ -543,6 +543,8 @@ def install(url, force, skip_platform_check=False, skip_migration=False, skip_pa
+     """ Install image from local binary or URL"""
+     bootloader = get_bootloader()
+ 
++    subprocess.run(["/usr/local/bin/sc_led", "1", "blue", "flash"], capture_output=True)
++
+     if url.startswith('http://') or url.startswith('https://'):
+         echo_and_log('Downloading image...')
+         validate_url_or_abort(url)
+@@ -625,6 +627,7 @@ def install(url, force, skip_platform_check=False, skip_migration=False, skip_pa
+     run_command(["sync"])
+     run_command(["sleep", "3"])  # wait 3 seconds after sync
+     echo_and_log('Done')
++    subprocess.run(["/usr/local/bin/sc_led", "1", "green", "stable"], capture_output=True)
+ 
+ 
+ # List installed images
+-- 
+2.25.1
+

@@ -1,0 +1,179 @@
+From b7fed1f6d4ec1e8713fb87d96ede1c271fdde76f Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Thu, 24 Sep 2026 07:17:11 +0000
+Subject: [PATCH] add reset button led spec
+
+---
+ rd98dx45xx_cn9131/utils/rst_button.py | 161 +++++++++++++-------------
+ 1 file changed, 81 insertions(+), 80 deletions(-)
+
+diff --git a/rd98dx45xx_cn9131/utils/rst_button.py b/rd98dx45xx_cn9131/utils/rst_button.py
+index 051bf3a..b321de1 100755
+--- a/rd98dx45xx_cn9131/utils/rst_button.py
++++ b/rd98dx45xx_cn9131/utils/rst_button.py
+@@ -1,80 +1,81 @@
+-import subprocess
+-import time
+-import os
+-
+-GPIO_TOOL = "/etc/sercomm/sc_gpio"
+-GPIO_PIN = "36"
+-
+-REBOOT_MIN_TIME = 1
+-FACTORY_MIN_TIME = 5
+-
+-class RstButtonMonitor:
+-    def __init__(self):
+-        try:
+-            subprocess.run([GPIO_TOOL, "dir", GPIO_PIN, "0"], check=True)
+-            print(f"GPIO {GPIO_PIN} set to input mode.", flush=True)
+-        except Exception as e:
+-            print(f"Failed to set GPIO direction: {e}", flush=True)
+-
+-    def read_gpio_state(self):
+-        try:
+-            result = subprocess.run([GPIO_TOOL, "dat", GPIO_PIN], capture_output=True, text=True)
+-            return "gpio36 value: 0" in result.stdout
+-        except Exception as e:
+-            print(f"Failed to read GPIO: {e}", flush=True)
+-            return False
+-
+-    def restore_default(self):
+-        print("Factory reset triggered. Restoring default config...", flush=True)
+-        
+-        subprocess.run(["rm", "-f", "/etc/sonic/config_db.json"])
+-        time.sleep(0.5)
+-        
+-        subprocess.run(["sync"])
+-        time.sleep(0.5)
+-        subprocess.run(["sync"])
+-        time.sleep(0.5)
+-        
+-        cmd = ["passwd", "admin"]
+-        try:
+-            p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+-            p.stdin.write("YourPaSsWoRd\n".encode('utf-8'))
+-            p.stdin.flush()
+-            p.stdin.write("YourPaSsWoRd\n".encode('utf-8'))
+-            p.stdin.flush()
+-            p.communicate()
+-        except Exception as e:
+-            print(f"Restore default password failed: {e}", flush=True)
+-
+-    def run(self):
+-        print("Button monitor started. Waiting for press...", flush=True)
+-        
+-        while True:
+-            while not self.read_gpio_state():
+-                time.sleep(1) 
+-            
+-            press_start_time = time.time()
+-            print("Button pressed...", flush=True)
+-            
+-            while self.read_gpio_state():
+-                time.sleep(1) 
+-            
+-            press_duration = time.time() - press_start_time + 1
+-            print(f"Button released. Duration: {press_duration:.2f}s", flush=True)
+-            
+-            if press_duration >= FACTORY_MIN_TIME:
+-                self.restore_default()
+-                time.sleep(2)
+-                print("Rebooting for factory reset...", flush=True)
+-                os.system("reset-factory")
+-                
+-            elif press_duration >= REBOOT_MIN_TIME:
+-                print("Rebooting system...", flush=True)
+-                os.system("reboot")
+-                
+-            else:
+-                print("Short press ignored (<1s). No action taken.", flush=True)
+-
+-if __name__ == '__main__':
+-    monitor = RstButtonMonitor()
+-    monitor.run()
+\ No newline at end of file
++import subprocess
++import time
++import os
++
++GPIO_TOOL = "/usr/local/bin/sc_gpio"
++GPIO_PIN = "36"
++
++REBOOT_MIN_TIME = 1
++FACTORY_MIN_TIME = 5
++
++class RstButtonMonitor:
++    def __init__(self):
++        try:
++            subprocess.run([GPIO_TOOL, "dir", GPIO_PIN, "0"], check=True)
++            print(f"GPIO {GPIO_PIN} set to input mode.", flush=True)
++        except Exception as e:
++            print(f"Failed to set GPIO direction: {e}", flush=True)
++
++    def read_gpio_state(self):
++        try:
++            result = subprocess.run([GPIO_TOOL, "dat", GPIO_PIN], capture_output=True, text=True)
++            return "gpio36 value: 0" in result.stdout
++        except Exception as e:
++            print(f"Failed to read GPIO: {e}", flush=True)
++            return False
++
++    def restore_default(self):
++        print("Factory reset triggered. Restoring default config...", flush=True)
++        
++        subprocess.run(["/usr/local/bin/sc_led", "1", "yellow", "flash"])
++        subprocess.run(["rm", "-f", "/etc/sonic/config_db.json"])
++        time.sleep(0.5)
++        
++        subprocess.run(["sync"])
++        time.sleep(0.5)
++        subprocess.run(["sync"])
++        time.sleep(0.5)
++        
++        cmd = ["passwd", "admin"]
++        try:
++            p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
++            p.stdin.write("YourPaSsWoRd\n".encode('utf-8'))
++            p.stdin.flush()
++            p.stdin.write("YourPaSsWoRd\n".encode('utf-8'))
++            p.stdin.flush()
++            p.communicate()
++        except Exception as e:
++            print(f"Restore default password failed: {e}", flush=True)
++
++    def run(self):
++        print("Button monitor started. Waiting for press...", flush=True)
++        
++        while True:
++            while not self.read_gpio_state():
++                time.sleep(1) 
++            
++            press_start_time = time.time()
++            print("Button pressed...", flush=True)
++            
++            while self.read_gpio_state():
++                time.sleep(1) 
++            
++            press_duration = time.time() - press_start_time + 1
++            print(f"Button released. Duration: {press_duration:.2f}s", flush=True)
++            
++            if press_duration >= FACTORY_MIN_TIME:
++                self.restore_default()
++                time.sleep(2)
++                print("Rebooting for factory reset...", flush=True)
++                os.system("reset-factory")
++                
++            elif press_duration >= REBOOT_MIN_TIME:
++                print("Rebooting system...", flush=True)
++                os.system("reboot")
++                
++            else:
++                print("Short press ignored (<1s). No action taken.", flush=True)
++
++if __name__ == '__main__':
++    monitor = RstButtonMonitor()
++    monitor.run()
+-- 
+2.25.1
+
