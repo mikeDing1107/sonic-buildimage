@@ -49,12 +49,6 @@ def gpio_enable():
 def init_lp5012():
     i2c_set(0x00, 0x40)
 
-def clear_single_led(led_id):
-    for reg in GROUP_BRIGHTNESS[led_id].values:
-        i2c_set(reg, 0x00)
-    for reg in PWM_REGS[led_id].values:
-        i2c_set(reg, 0x00)
-
 def set_led_on(led_id, color):
     channels = COLOR_CHANNELS[color]
     pwm = PWM_REGS[led_id]
