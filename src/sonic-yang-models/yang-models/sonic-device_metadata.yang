@@ -322,6 +322,21 @@ module sonic-device_metadata {
                     description "Enable syslog with OS version feature.";
                     default "false";
                 }
+
+		leaf hardware_rev {
+                    type string;
+                    description "Hardware revision of the device.";
+                }
+
+                leaf model_name {
+                    type string;
+                    description "Model name of the device.";
+                }
+
+                leaf serial_number {
+                    type string;
+                    description "Serial number of the device.";
+                }
             }
             /* end of container localhost */
         }
