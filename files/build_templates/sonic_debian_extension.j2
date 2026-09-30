@@ -965,6 +965,15 @@ sudo cp files/image_config/kubernetes/kubernetes_master_entrance.sh $FILESYSTEM_
 sudo chmod +x $FILESYSTEM_ROOT/usr/bin/kubernetes_master_entrance.sh
 sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable kubernetes_master_entrance.service
 {% endif %}
+# fake-hwclock: save/restore system clock on platforms without RTC hardware
+sudo mkdir -p $FILESYSTEM_ROOT/sbin $FILESYSTEM_ROOT/etc/cron.hourly $FILESYSTEM_ROOT/etc/default ${FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM}
+sudo cp $IMAGE_CONFIGS/fake-hwclock/sbin/fake-hwclock $FILESYSTEM_ROOT/sbin/
+sudo cp $IMAGE_CONFIGS/fake-hwclock/lib/systemd/system/fake-hwclock.service ${FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM}/
+sudo cp $IMAGE_CONFIGS/fake-hwclock/etc/cron.hourly/fake-hwclock $FILESYSTEM_ROOT/etc/cron.hourly/fake-hwclock
+sudo cp $IMAGE_CONFIGS/fake-hwclock/etc/default/fake-hwclock $FILESYSTEM_ROOT/etc/default/fake-hwclock
+sudo mkdir -p $FILESYSTEM_ROOT/etc/systemd/system/sysinit.target.wants
+sudo ln -sf /lib/systemd/system/fake-hwclock.service $FILESYSTEM_ROOT/etc/systemd/system/sysinit.target.wants/fake-hwclock.service
+echo "2000-01-01 00:00:00" | sudo tee $FILESYSTEM_ROOT/etc/fake-hwclock.data > /dev/null
 
 {% macro get_install_options(set_owner, enabled) -%}
 {% set args = ["-y", "-v", "DEBUG"] -%}

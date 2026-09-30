@@ -192,3 +192,12 @@
         /*phy-reset-gpios = <&cp0_gpio2 28 GPIO_ACTIVE_LOW>;*/
 };
 
+
+/*
+ * No RTC hardware on this board: the SoC-internal RTC (marvell,armada-8k-rtc)
+ * has no oscillator/battery and its registers are not writable.
+ * Disable it so the kernel does not load garbage time via hctosys at boot.
+ */
+&cp0_rtc {
+	status = "disabled";
+};
