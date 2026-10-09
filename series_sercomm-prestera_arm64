@@ -30,3 +30,4 @@ sc_0030_change_binary_catalog_and_name.patch|platform/marvell-prestera/sonic-pla
 sc_0031_add_reset_button_led_spec.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0032_add_upgrade_led_spec.patch|src/sonic-utilities
 sc_0033_fix_reboot_cause_service_start_fail.patch|src/sonic-host-services
+sc_0034_change_fans_number.patch|platform/marvell-prestera/sonic-platform-marvell
