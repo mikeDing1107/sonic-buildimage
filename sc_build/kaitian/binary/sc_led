@@ -75,6 +75,11 @@ def call_sc_flash(led_id, interval):
         sys.exit(1)
 
 def main():
+    if len(sys.argv) > 5:
+        print("Error: too many arguments")
+        print(__doc__)
+        sys.exit(1)
+        
     if len(sys.argv) < 3:
         print(__doc__); sys.exit(1)
     try:
@@ -85,6 +90,30 @@ def main():
         print("Error: led_id must be 1/2/3"); sys.exit(1)
 
     color = sys.argv[2].lower()
+    interval = 500
+
+    valid_colors = list(COLOR_CHANNELS.keys()) + ['off']
+    if color not in valid_colors:
+        print(f"Error: color must be one of {list(COLOR_CHANNELS.keys()) + ['off']}")
+        sys.exit(1)
+    if color != 'off':
+        if len(sys.argv) < 4:
+            print("Error: missing mode (stable/flash)"); sys.exit(1)
+        mode = sys.argv[3].lower()
+        if mode not in ('stable', 'flash'):
+            print("Error: mode must be 'stable' or 'flash'"); sys.exit(1)
+           
+        if mode == 'stable' and len(sys.argv) >= 5:
+            print("Error: stable mode does not accept interval"); sys.exit(1)
+            
+        if mode == 'flash' and len(sys.argv) >= 5:
+            try:
+                interval = int(sys.argv[4])
+            except ValueError:
+                print("Error: interval must be integer (ms)"); sys.exit(1)
+            if interval < 50 or interval > 10000:
+                print("Error: interval must be 50-10000"); sys.exit(1)
+        
     gpio_enable()
     init_lp5012()
 
@@ -95,26 +124,10 @@ def main():
         print(f"LED {led_id}: OFF")
         return
 
-    if color not in COLOR_CHANNELS:
-        print(f"Error: color must be one of {list(COLOR_CHANNELS.keys()) + ['off']}")
-        sys.exit(1)
-    if len(sys.argv) < 4:
-        print("Error: missing mode (stable/flash)"); sys.exit(1)
-
-    mode = sys.argv[3].lower()
-    if mode not in ('stable', 'flash'):
-        print("Error: mode must be 'stable' or 'flash'"); sys.exit(1)
-
     if mode == 'stable':
         set_led_on(led_id, color)
         print(f"LED {led_id}: {color} stable")
     elif mode == 'flash':
-        interval = 500
-        if len(sys.argv) >= 5:
-            try:
-                interval = max(50, int(sys.argv[4]))
-            except ValueError:
-                print("Error: interval must be integer (ms)"); sys.exit(1)
         set_led_on(led_id, color)
         call_sc_flash(led_id, interval)
 
