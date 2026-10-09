@@ -1,0 +1,53 @@
+From 830dd49f46d2c980ce00f01a2c4e78ad982b1b50 Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Fri, 9 Oct 2026 03:18:14 +0000
+Subject: [PATCH] fix Reboot cause service exit abnormally
+
+---
+ scripts/determine-reboot-cause | 28 +++++++++++++++++++++-------
+ 1 file changed, 21 insertions(+), 7 deletions(-)
+
+diff --git a/scripts/determine-reboot-cause b/scripts/determine-reboot-cause
+index d03da7d..c6c5b00 100755
+--- a/scripts/determine-reboot-cause
++++ b/scripts/determine-reboot-cause
+@@ -107,15 +107,29 @@ def find_proc_cmdline_reboot_cause():
+ 
+ 
+ def get_reboot_cause_from_platform():
+-    # Find hardware reboot cause using sonic_platform library
+     try:
+         import sonic_platform
+-        platform  = sonic_platform.platform.Platform()
+-        chassis  = platform.get_chassis()
+-        hardware_reboot_cause_major, hardware_reboot_cause_minor = chassis.get_reboot_cause()
+-        sonic_logger.log_info("Platform api returns reboot cause {}, {}".format(hardware_reboot_cause_major, hardware_reboot_cause_minor))
+-    except (ImportError, FileNotFoundError, NotImplementedError):
+-        sonic_logger.log_warning("sonic_platform package not installed or not implemented. Unable to detect hardware reboot causes.")
++        platform = sonic_platform.platform.Platform()
++        chassis = platform.get_chassis()
++        reboot_cause_result = chassis.get_reboot_cause()
++        
++        if reboot_cause_result is not None and hasattr(reboot_cause_result, '__iter__') and len(reboot_cause_result) == 2:
++            hardware_reboot_cause_major, hardware_reboot_cause_minor = reboot_cause_result
++        else:
++            sonic_logger.log_warning(
++                "Platform API get_reboot_cause() returned unexpected value: {}. "
++                "Expected a tuple of (major, minor).".format(reboot_cause_result)
++            )
++            hardware_reboot_cause_major, hardware_reboot_cause_minor = REBOOT_CAUSE_NON_HARDWARE, "N/A"
++            
++        sonic_logger.log_info("Platform api returns reboot cause {}, {}".format(
++            hardware_reboot_cause_major, hardware_reboot_cause_minor))
++            
++    except Exception as e:
++        sonic_logger.log_warning(
++            "Failed to get hardware reboot cause from platform API: {}. "
++            "Unable to detect hardware reboot causes.".format(str(e))
++        )
+         hardware_reboot_cause_major, hardware_reboot_cause_minor = REBOOT_CAUSE_NON_HARDWARE, "N/A"
+ 
+     return hardware_reboot_cause_major, hardware_reboot_cause_minor
+-- 
+2.25.1
+
