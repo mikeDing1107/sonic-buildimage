@@ -1,0 +1,40 @@
+From b31e3ca727c2ad24285f6923263806468ec31a76 Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sdc.sercomm.com>
+Date: Sat, 10 Oct 2026 16:15:09 +0800
+Subject: [PATCH] orchagent: skip mgmt interface eth1 for route and neighbor
+ orch
+
+---
+ orchagent/neighorch.cpp | 2 +-
+ orchagent/routeorch.cpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/orchagent/neighorch.cpp b/orchagent/neighorch.cpp
+index 4d652523..e37ead05 100644
+--- a/orchagent/neighorch.cpp
++++ b/orchagent/neighorch.cpp
+@@ -870,7 +870,7 @@ void NeighOrch::doTask(Consumer &consumer)
+ 
+         string alias = key.substr(0, found);
+ 
+-        if (alias == "eth0" || alias == "lo" || alias == "docker0"
++        if (alias == "eth0" || alias == "eth1" || alias == "lo" || alias == "docker0"
+             || ((op == SET_COMMAND) && m_intfsOrch->isInbandIntfInMgmtVrf(alias)))
+         {
+             it = consumer.m_toSync.erase(it);
+diff --git a/orchagent/routeorch.cpp b/orchagent/routeorch.cpp
+index 7a222589..e475f8ef 100644
+--- a/orchagent/routeorch.cpp
++++ b/orchagent/routeorch.cpp
+@@ -898,7 +898,7 @@ void RouteOrch::doTask(Consumer& consumer)
+                         * way is to create loopback interface and then create
+                         * route pointing to it, so that we can traps packets to
+                         * CPU */
+-                        if (alias == "eth0" || alias == "docker0" ||
++                        if (alias == "eth0" || alias == "eth1" || alias == "docker0" ||
+                             alias == "lo" || !alias.compare(0, strlen(LOOPBACK_PREFIX), LOOPBACK_PREFIX))
+                         {
+                             excp_intfs_flag = true;
+-- 
+2.25.1
+

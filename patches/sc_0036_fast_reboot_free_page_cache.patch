@@ -1,0 +1,26 @@
+From 52f8c08a3fab0f52be34e4fecace7eb817d820a3 Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sdc.sercomm.com>
+Date: Sat, 10 Oct 2026 16:15:09 +0800
+Subject: [PATCH] fast-reboot: free page cache before kexec load
+
+---
+ scripts/fast-reboot | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/scripts/fast-reboot b/scripts/fast-reboot
+index d7a9b90f..43ea523f 100755
+--- a/scripts/fast-reboot
++++ b/scripts/fast-reboot
+@@ -583,6 +583,9 @@ function load_aboot_secureboot_kernel() {
+ }
+ 
+ function invoke_kexec() {
++    # Free up page cache to ensure kexec can allocate memory for the new kernel
++    sync
++    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+     /sbin/kexec -l "$KERNEL_IMAGE" --initrd="$INITRD" --append="$BOOT_OPTIONS" $@
+ }
+ 
+-- 
+2.25.1
+
