@@ -33,3 +33,5 @@ sc_0033_fix_reboot_cause_service_start_fail.patch|src/sonic-host-services
 sc_0034_change_fans_number.patch|platform/marvell-prestera/sonic-platform-marvell
 sc_0035_orchagent_skip_eth1_mgmt.patch|src/sonic-swss
 sc_0036_fast_reboot_free_page_cache.patch|src/sonic-utilities
+sc_0037_gnmi_support_ucentral_blink_method.patch|src/sonic-gnmi
+sc_0038_host_services_support_ucentral_blink_method.patch|src/sonic-host-services
