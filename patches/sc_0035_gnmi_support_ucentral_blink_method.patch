@@ -1,0 +1,733 @@
+From 45f13b5de093638118d86ba15aebba6f4e559628 Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Sat, 10 Oct 2026 07:52:22 +0000
+Subject: [PATCH] gnmi support ucentral blink method
+
+---
+ common_utils/context.go                  |   3 +
+ gnmi_server/gnoi_led.go                  |  44 +++
+ gnmi_server/gnoi_led_test.go             |  80 ++++++
+ gnmi_server/server.go                    |   3 +
+ gnoi_client/gnoi_client.go               |  10 +
+ gnoi_client/led_control/led_control.go   |  36 +++
+ proto/gnoi/led/led_control.pb.go         | 329 +++++++++++++++++++++++
+ proto/gnoi/led/led_control.proto         |  22 ++
+ sonic_service_client/dbus_client.go      |  23 +-
+ sonic_service_client/dbus_client_test.go |  37 +++
+ 10 files changed, 586 insertions(+), 1 deletion(-)
+ create mode 100644 gnmi_server/gnoi_led.go
+ create mode 100644 gnmi_server/gnoi_led_test.go
+ create mode 100644 gnoi_client/led_control/led_control.go
+ create mode 100644 proto/gnoi/led/led_control.pb.go
+ create mode 100644 proto/gnoi/led/led_control.proto
+
+diff --git a/common_utils/context.go b/common_utils/context.go
+index 5d6367d..d1d6b13 100644
+--- a/common_utils/context.go
++++ b/common_utils/context.go
+@@ -44,6 +44,7 @@ const (
+ 	GNMI_SET_FAIL
+ 	GNOI_REBOOT
+ 	GNOI_FACTORY_RESET
++	GNOI_LED_FLASH
+ 	DBUS
+ 	DBUS_FAIL
+ 	DBUS_APPLY_PATCH_DB
+@@ -80,6 +81,8 @@ func (c CounterType) String() string {
+ 		return "GNOI reboot"
+ 	case GNOI_FACTORY_RESET:
+ 		return "GNOI Factory Reset"
++	case GNOI_LED_FLASH:
++		return "GNOI LED Flash"
+ 	case DBUS:
+ 		return "DBUS"
+ 	case DBUS_FAIL:
+diff --git a/gnmi_server/gnoi_led.go b/gnmi_server/gnoi_led.go
+new file mode 100644
+index 0000000..fe1ca4b
+--- /dev/null
++++ b/gnmi_server/gnoi_led.go
+@@ -0,0 +1,44 @@
++package gnmi
++
++import (
++	"context"
++	"fmt"
++
++	log "github.com/golang/glog"
++	pb "github.com/sonic-net/sonic-gnmi/proto/gnoi/led"
++	ssc "github.com/sonic-net/sonic-gnmi/sonic_service_client"
++	"google.golang.org/grpc/codes"
++	"google.golang.org/grpc/status"
++	json "google.golang.org/protobuf/encoding/protojson"
++)
++
++// Flash implements the corresponding RPC.
++func (srv *Server) Flash(ctx context.Context, req *pb.FlashRequest) (*pb.FlashResponse, error) {
++	ctx, err := authenticate(srv.config, ctx, "gnoi", false)
++	if err != nil {
++		return nil, err
++	}
++	log.V(1).Infof("gNOI: led_control.Flash led_id=%d color=%s mode=%s", req.LedId, req.Color, req.Mode)
++
++	reqStr, err := json.Marshal(req)
++	if err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Cannot marshal FlashRequest: [%s], err %v", req.String(), err))
++	}
++
++	sc, err := ssc.NewDbusClient()
++	if err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Error creating dbus client: [%s]", err.Error()))
++	}
++
++	respStr, err := sc.LedFlash(string(reqStr))
++	log.V(1).Infof("gNOI: led_control.Flash Response %s", respStr)
++	if err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Backend error: %v", err))
++	}
++
++	resp := &pb.FlashResponse{}
++	if err := json.Unmarshal([]byte(respStr), resp); err != nil {
++		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Cannot unmarshal backend response: [%s], error: %v", respStr, err))
++	}
++	return resp, nil
++}
+diff --git a/gnmi_server/gnoi_led_test.go b/gnmi_server/gnoi_led_test.go
+new file mode 100644
+index 0000000..bdc55a4
+--- /dev/null
++++ b/gnmi_server/gnoi_led_test.go
+@@ -0,0 +1,80 @@
++package gnmi
++
++import (
++	"context"
++	"crypto/tls"
++	"fmt"
++	"testing"
++
++	"github.com/agiledragon/gomonkey/v2"
++	led_pb "github.com/sonic-net/sonic-gnmi/proto/gnoi/led"
++	ssc "github.com/sonic-net/sonic-gnmi/sonic_service_client"
++
++	"google.golang.org/grpc"
++	"google.golang.org/grpc/codes"
++	"google.golang.org/grpc/credentials"
++	"google.golang.org/grpc/status"
++)
++
++const (
++	ledFlashSuccess string = `{"success": true, "message": "accepted"}`
++	ledFlashFail    string = `{"success": false, "message": "Invalid color: 'purple', allowed: [blue green red yellow]"}`
++)
++
++func TestGnoiLedFlash(t *testing.T) {
++	s := createServer(t, 8082)
++	go runServer(t, s)
++	defer s.Stop()
++
++	tlsConfig := &tls.Config{InsecureSkipVerify: true}
++	opts := []grpc.DialOption{grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))}
++	conn, err := grpc.Dial("127.0.0.1:8082", opts...)
++	if err != nil {
++		t.Fatalf("Dialing failed: %v", err)
++	}
++	defer conn.Close()
++	c := led_pb.NewLedControlClient(conn)
++
++	t.Run("Successful Flash", func(t *testing.T) {
++		patch1 := gomonkey.ApplyFuncReturn(ssc.NewDbusClient, &ssc.DbusClient{}, nil)
++		patch2 := gomonkey.ApplyFuncReturn(ssc.DbusApi, ledFlashSuccess, nil)
++		defer patch1.Reset()
++		defer patch2.Reset()
++
++		resp, err := c.Flash(context.Background(), &led_pb.FlashRequest{LedId: 1, Color: "green", Mode: "flash"})
++		if err != nil {
++			t.Fatalf("Unexpected error %v", err)
++		}
++		if !resp.Success {
++			t.Fatalf("Expected success but got: %s", resp.Message)
++		}
++	})
++
++	t.Run("DBus Client Error", func(t *testing.T) {
++		patch := gomonkey.ApplyFuncReturn(ssc.NewDbusClient, nil, fmt.Errorf("client error"))
++		defer patch.Reset()
++
++		_, err := c.Flash(context.Background(), &led_pb.FlashRequest{LedId: 1, Color: "red", Mode: "stable"})
++		if err == nil {
++			t.Fatalf("Expected error but got success")
++		}
++		if status.Code(err) != codes.Internal {
++			t.Fatalf("Expected Internal error but got %#v", status.Code(err))
++		}
++	})
++
++	t.Run("Backend Validation Error", func(t *testing.T) {
++		patch1 := gomonkey.ApplyFuncReturn(ssc.NewDbusClient, &ssc.DbusClient{}, nil)
++		patch2 := gomonkey.ApplyFuncReturn(ssc.DbusApi, ledFlashFail, nil)
++		defer patch1.Reset()
++		defer patch2.Reset()
++
++		resp, err := c.Flash(context.Background(), &led_pb.FlashRequest{LedId: 1, Color: "purple", Mode: "flash"})
++		if err != nil {
++			t.Fatalf("Unexpected error %v", err)
++		}
++		if resp.Success {
++			t.Fatalf("Expected failure but got success")
++		}
++	})
++}
+diff --git a/gnmi_server/server.go b/gnmi_server/server.go
+index 779fd49..dad320a 100644
+--- a/gnmi_server/server.go
++++ b/gnmi_server/server.go
+@@ -23,6 +23,7 @@ import (
+ 	gnoi_containerz_pb "github.com/openconfig/gnoi/containerz"
+ 	"github.com/openconfig/gnoi/factory_reset"
+ 	gnoi_system_pb "github.com/openconfig/gnoi/system"
++	led_control_pb "github.com/sonic-net/sonic-gnmi/proto/gnoi/led"
+ 
+ 	//gnoi_yang "github.com/sonic-net/sonic-gnmi/build/gnoi_yang/server"
+ 	gnoi_file_pb "github.com/openconfig/gnoi/file"
+@@ -58,6 +59,7 @@ type Server struct {
+ 	masterEID     uint128
+ 	gnoi_system_pb.UnimplementedSystemServer
+ 	factory_reset.UnimplementedFactoryResetServer
++	led_control_pb.UnimplementedLedControlServer
+ }
+ 
+ // FileServer is the server API for File service.
+@@ -207,6 +209,7 @@ func NewServer(config *Config, opts []grpc.ServerOption) (*Server, error) {
+ 	}
+ 	gnmipb.RegisterGNMIServer(srv.s, srv)
+ 	factory_reset.RegisterFactoryResetServer(srv.s, srv)
++	led_control_pb.RegisterLedControlServer(srv.s, srv)
+ 	spb_jwt_gnoi.RegisterSonicJwtServiceServer(srv.s, srv)
+ 	if srv.config.EnableTranslibWrite || srv.config.EnableNativeWrite {
+ 		gnoi_system_pb.RegisterSystemServer(srv.s, srv)
+diff --git a/gnoi_client/gnoi_client.go b/gnoi_client/gnoi_client.go
+index 9b78637..74436a5 100644
+--- a/gnoi_client/gnoi_client.go
++++ b/gnoi_client/gnoi_client.go
+@@ -11,9 +11,11 @@ import (
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/containerz"
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/factory_reset"
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/file"
++	"github.com/sonic-net/sonic-gnmi/gnoi_client/led_control"
+ 	gnoi_os "github.com/sonic-net/sonic-gnmi/gnoi_client/os" // So it does not collide with os.
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/sonic"
+ 	"github.com/sonic-net/sonic-gnmi/gnoi_client/system"
++	led_pb "github.com/sonic-net/sonic-gnmi/proto/gnoi/led"
+ 	"google.golang.org/grpc"
+ )
+ 
+@@ -75,6 +77,14 @@ func main() {
+ 		default:
+ 			panic("Invalid RPC Name")
+ 		}
++	case "LedControl":
++		lc := led_pb.NewLedControlClient(conn)
++		switch *config.Rpc {
++		case "Flash":
++			led_control.FlashLed(lc, ctx)
++		default:
++			panic("Invalid RPC Name")
++		}
+ 	case "Sonic":
+ 		switch *config.Rpc {
+ 		case "showtechsupport":
+diff --git a/gnoi_client/led_control/led_control.go b/gnoi_client/led_control/led_control.go
+new file mode 100644
+index 0000000..881e0c2
+--- /dev/null
++++ b/gnoi_client/led_control/led_control.go
+@@ -0,0 +1,36 @@
++package led_control
++
++import (
++	"context"
++	"encoding/json"
++	"fmt"
++
++	"github.com/sonic-net/sonic-gnmi/gnoi_client/config"
++	"github.com/sonic-net/sonic-gnmi/gnoi_client/utils"
++	led_pb "github.com/sonic-net/sonic-gnmi/proto/gnoi/led"
++)
++
++func FlashLed(sc led_pb.LedControlClient, ctx context.Context) {
++	fmt.Println("LED Flash.")
++	ctx = utils.SetUserCreds(ctx)
++	if *config.Args == "" {
++		panic("--jsonin must be set.")
++	}
++
++	req := &led_pb.FlashRequest{}
++	if err := json.Unmarshal([]byte(*config.Args), req); err != nil {
++		fmt.Println("Unable to parse JSON input: ", err)
++		panic("Unable to parse JSON input.")
++	}
++
++	resp, err := sc.Flash(ctx, req)
++	if err != nil {
++		panic(err.Error())
++	}
++
++	respstr, err := json.Marshal(resp)
++	if err != nil {
++		panic(err.Error())
++	}
++	fmt.Println(string(respstr))
++}
+diff --git a/proto/gnoi/led/led_control.pb.go b/proto/gnoi/led/led_control.pb.go
+new file mode 100644
+index 0000000..b7c7cb9
+--- /dev/null
++++ b/proto/gnoi/led/led_control.pb.go
+@@ -0,0 +1,329 @@
++// Code generated by protoc-gen-go. DO NOT EDIT.
++// versions:
++// 	protoc-gen-go v1.33.0
++// 	protoc        v3.6.1
++// source: proto/gnoi/led/led_control.proto
++
++package led
++
++import (
++	context "context"
++	grpc "google.golang.org/grpc"
++	codes "google.golang.org/grpc/codes"
++	status "google.golang.org/grpc/status"
++	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
++	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
++	reflect "reflect"
++	sync "sync"
++)
++
++const (
++	// Verify that this generated code is sufficiently up-to-date.
++	_ = protoimpl.EnforceVersion(20 - protoimpl.MinVersion)
++	// Verify that runtime/protoimpl is sufficiently up-to-date.
++	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
++)
++
++type FlashRequest struct {
++	state         protoimpl.MessageState
++	sizeCache     protoimpl.SizeCache
++	unknownFields protoimpl.UnknownFields
++
++	LedId int32 `protobuf:"varint,1,opt,name=led_id,json=ledId,proto3" json:"led_id,omitempty"`
++	// Allowed: red, blue, green, yellow
++	Color string `protobuf:"bytes,2,opt,name=color,proto3" json:"color,omitempty"`
++	// Allowed: flash, stable
++	Mode string `protobuf:"bytes,3,opt,name=mode,proto3" json:"mode,omitempty"`
++}
++
++func (x *FlashRequest) Reset() {
++	*x = FlashRequest{}
++	if protoimpl.UnsafeEnabled {
++		mi := &file_proto_gnoi_led_led_control_proto_msgTypes[0]
++		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
++		ms.StoreMessageInfo(mi)
++	}
++}
++
++func (x *FlashRequest) String() string {
++	return protoimpl.X.MessageStringOf(x)
++}
++
++func (*FlashRequest) ProtoMessage() {}
++
++func (x *FlashRequest) ProtoReflect() protoreflect.Message {
++	mi := &file_proto_gnoi_led_led_control_proto_msgTypes[0]
++	if protoimpl.UnsafeEnabled && x != nil {
++		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
++		if ms.LoadMessageInfo() == nil {
++			ms.StoreMessageInfo(mi)
++		}
++		return ms
++	}
++	return mi.MessageOf(x)
++}
++
++// Deprecated: Use FlashRequest.ProtoReflect.Descriptor instead.
++func (*FlashRequest) Descriptor() ([]byte, []int) {
++	return file_proto_gnoi_led_led_control_proto_rawDescGZIP(), []int{0}
++}
++
++func (x *FlashRequest) GetLedId() int32 {
++	if x != nil {
++		return x.LedId
++	}
++	return 0
++}
++
++func (x *FlashRequest) GetColor() string {
++	if x != nil {
++		return x.Color
++	}
++	return ""
++}
++
++func (x *FlashRequest) GetMode() string {
++	if x != nil {
++		return x.Mode
++	}
++	return ""
++}
++
++type FlashResponse struct {
++	state         protoimpl.MessageState
++	sizeCache     protoimpl.SizeCache
++	unknownFields protoimpl.UnknownFields
++
++	Success bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
++	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
++}
++
++func (x *FlashResponse) Reset() {
++	*x = FlashResponse{}
++	if protoimpl.UnsafeEnabled {
++		mi := &file_proto_gnoi_led_led_control_proto_msgTypes[1]
++		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
++		ms.StoreMessageInfo(mi)
++	}
++}
++
++func (x *FlashResponse) String() string {
++	return protoimpl.X.MessageStringOf(x)
++}
++
++func (*FlashResponse) ProtoMessage() {}
++
++func (x *FlashResponse) ProtoReflect() protoreflect.Message {
++	mi := &file_proto_gnoi_led_led_control_proto_msgTypes[1]
++	if protoimpl.UnsafeEnabled && x != nil {
++		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
++		if ms.LoadMessageInfo() == nil {
++			ms.StoreMessageInfo(mi)
++		}
++		return ms
++	}
++	return mi.MessageOf(x)
++}
++
++// Deprecated: Use FlashResponse.ProtoReflect.Descriptor instead.
++func (*FlashResponse) Descriptor() ([]byte, []int) {
++	return file_proto_gnoi_led_led_control_proto_rawDescGZIP(), []int{1}
++}
++
++func (x *FlashResponse) GetSuccess() bool {
++	if x != nil {
++		return x.Success
++	}
++	return false
++}
++
++func (x *FlashResponse) GetMessage() string {
++	if x != nil {
++		return x.Message
++	}
++	return ""
++}
++
++var File_proto_gnoi_led_led_control_proto protoreflect.FileDescriptor
++
++var file_proto_gnoi_led_led_control_proto_rawDesc = []byte{
++	0x0a, 0x20, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6e, 0x6f, 0x69, 0x2f, 0x6c, 0x65, 0x64,
++	0x2f, 0x6c, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
++	0x74, 0x6f, 0x12, 0x08, 0x67, 0x6e, 0x6f, 0x69, 0x2e, 0x6c, 0x65, 0x64, 0x22, 0x4f, 0x0a, 0x0c,
++	0x46, 0x6c, 0x61, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x15, 0x0a, 0x06,
++	0x6c, 0x65, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x6c, 0x65,
++	0x64, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01,
++	0x28, 0x09, 0x52, 0x05, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x6d, 0x6f, 0x64,
++	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x22, 0x43, 0x0a,
++	0x0d, 0x46, 0x6c, 0x61, 0x73, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18,
++	0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52,
++	0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73,
++	0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61,
++	0x67, 0x65, 0x32, 0x46, 0x0a, 0x0a, 0x4c, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c,
++	0x12, 0x38, 0x0a, 0x05, 0x46, 0x6c, 0x61, 0x73, 0x68, 0x12, 0x16, 0x2e, 0x67, 0x6e, 0x6f, 0x69,
++	0x2e, 0x6c, 0x65, 0x64, 0x2e, 0x46, 0x6c, 0x61, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
++	0x74, 0x1a, 0x17, 0x2e, 0x67, 0x6e, 0x6f, 0x69, 0x2e, 0x6c, 0x65, 0x64, 0x2e, 0x46, 0x6c, 0x61,
++	0x73, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x34, 0x5a, 0x32, 0x67, 0x69,
++	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x6e, 0x69, 0x63, 0x2d, 0x6e,
++	0x65, 0x74, 0x2f, 0x73, 0x6f, 0x6e, 0x69, 0x63, 0x2d, 0x67, 0x6e, 0x6d, 0x69, 0x2f, 0x70, 0x72,
++	0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6e, 0x6f, 0x69, 0x2f, 0x6c, 0x65, 0x64, 0x3b, 0x6c, 0x65, 0x64,
++	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
++}
++
++var (
++	file_proto_gnoi_led_led_control_proto_rawDescOnce sync.Once
++	file_proto_gnoi_led_led_control_proto_rawDescData = file_proto_gnoi_led_led_control_proto_rawDesc
++)
++
++func file_proto_gnoi_led_led_control_proto_rawDescGZIP() []byte {
++	file_proto_gnoi_led_led_control_proto_rawDescOnce.Do(func() {
++		file_proto_gnoi_led_led_control_proto_rawDescData = protoimpl.X.CompressGZIP(file_proto_gnoi_led_led_control_proto_rawDescData)
++	})
++	return file_proto_gnoi_led_led_control_proto_rawDescData
++}
++
++var file_proto_gnoi_led_led_control_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
++var file_proto_gnoi_led_led_control_proto_goTypes = []interface{}{
++	(*FlashRequest)(nil),  // 0: gnoi.led.FlashRequest
++	(*FlashResponse)(nil), // 1: gnoi.led.FlashResponse
++}
++var file_proto_gnoi_led_led_control_proto_depIdxs = []int32{
++	0, // 0: gnoi.led.LedControl.Flash:input_type -> gnoi.led.FlashRequest
++	1, // 1: gnoi.led.LedControl.Flash:output_type -> gnoi.led.FlashResponse
++	1, // [1:2] is the sub-list for method output_type
++	0, // [0:1] is the sub-list for method input_type
++	0, // [0:0] is the sub-list for extension type_name
++	0, // [0:0] is the sub-list for extension extendee
++	0, // [0:0] is the sub-list for field type_name
++}
++
++func init() { file_proto_gnoi_led_led_control_proto_init() }
++func file_proto_gnoi_led_led_control_proto_init() {
++	if File_proto_gnoi_led_led_control_proto != nil {
++		return
++	}
++	if !protoimpl.UnsafeEnabled {
++		file_proto_gnoi_led_led_control_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
++			switch v := v.(*FlashRequest); i {
++			case 0:
++				return &v.state
++			case 1:
++				return &v.sizeCache
++			case 2:
++				return &v.unknownFields
++			default:
++				return nil
++			}
++		}
++		file_proto_gnoi_led_led_control_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
++			switch v := v.(*FlashResponse); i {
++			case 0:
++				return &v.state
++			case 1:
++				return &v.sizeCache
++			case 2:
++				return &v.unknownFields
++			default:
++				return nil
++			}
++		}
++	}
++	type x struct{}
++	out := protoimpl.TypeBuilder{
++		File: protoimpl.DescBuilder{
++			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
++			RawDescriptor: file_proto_gnoi_led_led_control_proto_rawDesc,
++			NumEnums:      0,
++			NumMessages:   2,
++			NumExtensions: 0,
++			NumServices:   1,
++		},
++		GoTypes:           file_proto_gnoi_led_led_control_proto_goTypes,
++		DependencyIndexes: file_proto_gnoi_led_led_control_proto_depIdxs,
++		MessageInfos:      file_proto_gnoi_led_led_control_proto_msgTypes,
++	}.Build()
++	File_proto_gnoi_led_led_control_proto = out.File
++	file_proto_gnoi_led_led_control_proto_rawDesc = nil
++	file_proto_gnoi_led_led_control_proto_goTypes = nil
++	file_proto_gnoi_led_led_control_proto_depIdxs = nil
++}
++
++// Reference imports to suppress errors if they are not otherwise used.
++var _ context.Context
++var _ grpc.ClientConnInterface
++
++// This is a compile-time assertion to ensure that this generated file
++// is compatible with the grpc package it is being compiled against.
++const _ = grpc.SupportPackageIsVersion6
++
++// LedControlClient is the client API for LedControl service.
++//
++// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
++type LedControlClient interface {
++	Flash(ctx context.Context, in *FlashRequest, opts ...grpc.CallOption) (*FlashResponse, error)
++}
++
++type ledControlClient struct {
++	cc grpc.ClientConnInterface
++}
++
++func NewLedControlClient(cc grpc.ClientConnInterface) LedControlClient {
++	return &ledControlClient{cc}
++}
++
++func (c *ledControlClient) Flash(ctx context.Context, in *FlashRequest, opts ...grpc.CallOption) (*FlashResponse, error) {
++	out := new(FlashResponse)
++	err := c.cc.Invoke(ctx, "/gnoi.led.LedControl/Flash", in, out, opts...)
++	if err != nil {
++		return nil, err
++	}
++	return out, nil
++}
++
++// LedControlServer is the server API for LedControl service.
++type LedControlServer interface {
++	Flash(context.Context, *FlashRequest) (*FlashResponse, error)
++}
++
++// UnimplementedLedControlServer can be embedded to have forward compatible implementations.
++type UnimplementedLedControlServer struct {
++}
++
++func (*UnimplementedLedControlServer) Flash(context.Context, *FlashRequest) (*FlashResponse, error) {
++	return nil, status.Errorf(codes.Unimplemented, "method Flash not implemented")
++}
++
++func RegisterLedControlServer(s *grpc.Server, srv LedControlServer) {
++	s.RegisterService(&_LedControl_serviceDesc, srv)
++}
++
++func _LedControl_Flash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
++	in := new(FlashRequest)
++	if err := dec(in); err != nil {
++		return nil, err
++	}
++	if interceptor == nil {
++		return srv.(LedControlServer).Flash(ctx, in)
++	}
++	info := &grpc.UnaryServerInfo{
++		Server:     srv,
++		FullMethod: "/gnoi.led.LedControl/Flash",
++	}
++	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
++		return srv.(LedControlServer).Flash(ctx, req.(*FlashRequest))
++	}
++	return interceptor(ctx, in, info, handler)
++}
++
++var _LedControl_serviceDesc = grpc.ServiceDesc{
++	ServiceName: "gnoi.led.LedControl",
++	HandlerType: (*LedControlServer)(nil),
++	Methods: []grpc.MethodDesc{
++		{
++			MethodName: "Flash",
++			Handler:    _LedControl_Flash_Handler,
++		},
++	},
++	Streams:  []grpc.StreamDesc{},
++	Metadata: "proto/gnoi/led/led_control.proto",
++}
+diff --git a/proto/gnoi/led/led_control.proto b/proto/gnoi/led/led_control.proto
+new file mode 100644
+index 0000000..e730c92
+--- /dev/null
++++ b/proto/gnoi/led/led_control.proto
+@@ -0,0 +1,22 @@
++syntax = "proto3";
++
++package gnoi.led;
++
++option go_package = "github.com/sonic-net/sonic-gnmi/proto/gnoi/led;led";
++
++service LedControl {
++  rpc Flash(FlashRequest) returns (FlashResponse);
++}
++
++message FlashRequest {
++  int32 led_id = 1;
++  // Allowed: red, blue, green, yellow
++  string color = 2;
++  // Allowed: flash, stable
++  string mode = 3;
++}
++
++message FlashResponse {
++  bool success = 1;
++  string message = 2;
++}
+diff --git a/sonic_service_client/dbus_client.go b/sonic_service_client/dbus_client.go
+index 7c4b12a..0db2326 100644
+--- a/sonic_service_client/dbus_client.go
++++ b/sonic_service_client/dbus_client.go
+@@ -34,6 +34,7 @@ type Service interface {
+ 	ListImages() (string, error)
+ 	ActivateImage(image string) error
+ 	FactoryReset(cmd string) (string, error)
++	LedFlash(cmd string) (string, error)
+ 	// Docker services APIs
+ 	LoadDockerImage(image string) error
+ }
+@@ -314,7 +315,27 @@ func (c *DbusClient) FactoryReset(cmd string) (string, error) {
+ 	intName := c.intNamePrefix + modName + ".issue_reset"
+ 
+ 	common_utils.IncCounter(common_utils.GNOI_FACTORY_RESET)
+-	result, err := DbusApi(busName, busPath, intName, 30, cmd)
++	result, err := DbusApi(busName, busPath, intName, 10, cmd)
++	if err != nil {
++		return "", err
++	}
++
++	strResult, ok := result.(string)
++	if !ok {
++		return "", fmt.Errorf("Invalid result type %v: expected string, got %T", reflect.TypeOf(result), result)
++	}
++
++	return strResult, nil
++}
++
++func (c *DbusClient) LedFlash(cmd string) (string, error) {
++	modName := "gnoi_led"
++	busName := c.busNamePrefix + modName
++	busPath := c.busPathPrefix + modName
++	intName := c.intNamePrefix + modName + ".flash_led"
++
++	common_utils.IncCounter(common_utils.GNOI_LED_FLASH)
++	result, err := DbusApi(busName, busPath, intName, 10, cmd)
+ 	if err != nil {
+ 		return "", err
+ 	}
+diff --git a/sonic_service_client/dbus_client_test.go b/sonic_service_client/dbus_client_test.go
+index 4b6dc99..dab07e4 100644
+--- a/sonic_service_client/dbus_client_test.go
++++ b/sonic_service_client/dbus_client_test.go
+@@ -1192,3 +1192,40 @@ func TestFactoryReset(t *testing.T) {
+ 		t.Errorf("Expected result: %s, got: %s", expectedResult, result)
+ 	}
+ }
++
++func TestLedFlash(t *testing.T) {
++	expectedCmd := `{"led_id":1,"color":"green","mode":"flash"}`
++	expectedResult := `{"success": true, "message": "accepted"}`
++
++	mock1 := gomonkey.ApplyFunc(dbus.SystemBus, func() (conn *dbus.Conn, err error) {
++		return &dbus.Conn{}, nil
++	})
++	defer mock1.Reset()
++
++	mock2 := gomonkey.ApplyMethod(reflect.TypeOf(&dbus.Object{}), "Go", func(obj *dbus.Object, method string, flags dbus.Flags, ch chan *dbus.Call, args ...interface{}) *dbus.Call {
++		if method != "org.SONiC.HostService.gnoi_led.flash_led" {
++			t.Errorf("Wrong method: %v", method)
++		}
++		ret := &dbus.Call{}
++		ret.Err = nil
++		ret.Body = make([]interface{}, 2)
++		ret.Body[0] = int32(0)
++		ret.Body[1] = expectedResult
++		ch <- ret
++		return ret
++	})
++	defer mock2.Reset()
++
++	client, err := NewDbusClient()
++	if err != nil {
++		t.Fatalf("NewDbusClient failed: %v", err)
++	}
++
++	result, err := client.LedFlash(expectedCmd)
++	if err != nil {
++		t.Errorf("LedFlash failed: %v", err)
++	}
++	if result != expectedResult {
++		t.Errorf("Expected result: %s, got: %s", expectedResult, result)
++	}
++}
+-- 
+2.25.1
+
