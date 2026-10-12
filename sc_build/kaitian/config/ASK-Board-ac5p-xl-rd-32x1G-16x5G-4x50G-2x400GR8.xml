@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" version="2025-05-15-1.11" profile="Askboard" sid="e4650fda-5634-40b1-9d26-860af3e20dcf">
+<data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" version="2025-05-15-1.11" profile="Askboard" dsig="md5" sid="e4650fda-5634-40b1-9d26-860af3e20dcf">
   <askboardplt:ASK-Board xmlns:askboardplt="urn:marvell:askboard:yang">
     <askboardplt:typedefs>
       <askboardplt:typedef>
@@ -699,7 +699,11 @@ Ethernet Transceiver</askboardplt:description>
         </askboardplt:phy>
         <askboardplt:serdesMuxScheme askboardplt:type="string">MAP2</askboardplt:serdesMuxScheme>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">1</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -714,9 +718,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">0</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -731,9 +738,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">3</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -748,9 +758,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">2</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -765,9 +778,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">5</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -782,9 +798,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">4</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -799,9 +818,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">7</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -816,9 +838,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">6</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -835,7 +860,11 @@ Ethernet Transceiver</askboardplt:description>
         </askboardplt:phy>
         <askboardplt:serdesMuxScheme askboardplt:type="string">MAP2</askboardplt:serdesMuxScheme>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">1</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -850,9 +879,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">0</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -867,9 +899,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">3</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -884,9 +919,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">2</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -901,9 +939,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">5</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -918,9 +959,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">4</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -935,9 +979,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">7</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -952,9 +999,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">6</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -971,7 +1021,11 @@ Ethernet Transceiver</askboardplt:description>
         </askboardplt:phy>
         <askboardplt:serdesMuxScheme askboardplt:type="string">MAP2</askboardplt:serdesMuxScheme>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">1</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -986,9 +1040,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">0</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1003,9 +1060,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">3</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1020,9 +1080,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">2</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1037,9 +1100,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">5</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1054,9 +1120,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">4</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1071,9 +1140,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">7</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1088,9 +1160,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">6</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1107,7 +1182,11 @@ Ethernet Transceiver</askboardplt:description>
         </askboardplt:phy>
         <askboardplt:serdesMuxScheme askboardplt:type="string">MAP2</askboardplt:serdesMuxScheme>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">0</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1122,9 +1201,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">1</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1139,9 +1221,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">2</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1156,9 +1241,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">3</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1173,9 +1261,12 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:phyType askboardplt:type="phy-type">NA</askboardplt:phyType>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
-        <askboardplt:serdesMuxScheme askboardplt:type="string"/>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">63</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">4</askboardplt:ledPosition>
+          <askboardplt:polarityInvertList-list>
+            <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
+            <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
+          </askboardplt:polarityInvertList-list>
           <askboardplt:portForceDataSupported askboardplt:type="boolean-type">false</askboardplt:portForceDataSupported>
         </askboardplt:ledstream-port>
       </askboardplt:portMap-list>
@@ -1378,7 +1469,7 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:ledUnit-List>
             <askboardplt:ledUnit askboardplt:type="led-unit-type">1</askboardplt:ledUnit>
             <askboardplt:ledStart askboardplt:type="uint32">64</askboardplt:ledStart>
-            <askboardplt:ledEnd askboardplt:type="uint32">65</askboardplt:ledEnd>
+            <askboardplt:ledEnd askboardplt:type="uint32">71</askboardplt:ledEnd>
             <askboardplt:ledChainBypass askboardplt:type="boolean-type">false</askboardplt:ledChainBypass>
           </askboardplt:ledUnit-List>
           <askboardplt:ledUnit-List>
@@ -1392,7 +1483,7 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:ledUnit-List>
             <askboardplt:ledUnit askboardplt:type="led-unit-type">4</askboardplt:ledUnit>
             <askboardplt:ledStart askboardplt:type="uint32">64</askboardplt:ledStart>
-            <askboardplt:ledEnd askboardplt:type="uint32">65</askboardplt:ledEnd>
+            <askboardplt:ledEnd askboardplt:type="uint32">71</askboardplt:ledEnd>
             <askboardplt:ledChainBypass askboardplt:type="boolean-type">false</askboardplt:ledChainBypass>
           </askboardplt:ledUnit-List>
           <askboardplt:ledUnit-List>
@@ -1402,20 +1493,20 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:ledUnit-List>
             <askboardplt:ledUnit askboardplt:type="led-unit-type">6</askboardplt:ledUnit>
             <askboardplt:ledStart askboardplt:type="uint32">64</askboardplt:ledStart>
-            <askboardplt:ledEnd askboardplt:type="uint32">64</askboardplt:ledEnd>
+            <askboardplt:ledEnd askboardplt:type="uint32">71</askboardplt:ledEnd>
             <askboardplt:ledChainBypass askboardplt:type="boolean-type">false</askboardplt:ledChainBypass>
           </askboardplt:ledUnit-List>
           <askboardplt:ledUnit-List>
             <askboardplt:ledUnit askboardplt:type="led-unit-type">7</askboardplt:ledUnit>
             <askboardplt:ledStart askboardplt:type="uint32">64</askboardplt:ledStart>
-            <askboardplt:ledEnd askboardplt:type="uint32">64</askboardplt:ledEnd>
+            <askboardplt:ledEnd askboardplt:type="uint32">71</askboardplt:ledEnd>
             <askboardplt:ledChainBypass askboardplt:type="boolean-type">false</askboardplt:ledChainBypass>
           </askboardplt:ledUnit-List>
         </askboardplt:ledstream-configSet>
         <askboardplt:ledstream-class-manipulation-list>
           <askboardplt:classNum askboardplt:type="led-class-num-type">0</askboardplt:classNum>
           <askboardplt:portType askboardplt:type="led-stream-port-type">PORT_TYPE_XG</askboardplt:portType>
-          <askboardplt:blinkEnable askboardplt:type="boolean-type">false</askboardplt:blinkEnable>
+          <askboardplt:blinkEnable askboardplt:type="boolean-type">true</askboardplt:blinkEnable>
           <askboardplt:blinkSelect askboardplt:type="led-stream-blink-select-type">BLINK_SELECT_0</askboardplt:blinkSelect>
           <askboardplt:forceEnable askboardplt:type="boolean-type">false</askboardplt:forceEnable>
           <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">false</askboardplt:pulseStretchEnable>
@@ -1424,7 +1515,7 @@ Ethernet Transceiver</askboardplt:description>
         <askboardplt:ledstream-class-manipulation-list>
           <askboardplt:classNum askboardplt:type="led-class-num-type">1</askboardplt:classNum>
           <askboardplt:portType askboardplt:type="led-stream-port-type">PORT_TYPE_XG</askboardplt:portType>
-          <askboardplt:blinkEnable askboardplt:type="boolean-type">false</askboardplt:blinkEnable>
+          <askboardplt:blinkEnable askboardplt:type="boolean-type">true</askboardplt:blinkEnable>
           <askboardplt:blinkSelect askboardplt:type="led-stream-blink-select-type">BLINK_SELECT_0</askboardplt:blinkSelect>
           <askboardplt:forceEnable askboardplt:type="boolean-type">false</askboardplt:forceEnable>
           <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">false</askboardplt:pulseStretchEnable>
@@ -1436,13 +1527,13 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:blinkEnable askboardplt:type="boolean-type">true</askboardplt:blinkEnable>
           <askboardplt:blinkSelect askboardplt:type="led-stream-blink-select-type">BLINK_SELECT_0</askboardplt:blinkSelect>
           <askboardplt:forceEnable askboardplt:type="boolean-type">false</askboardplt:forceEnable>
-          <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">false</askboardplt:pulseStretchEnable>
+          <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">true</askboardplt:pulseStretchEnable>
           <askboardplt:disableOnLinkDown askboardplt:type="boolean-type">true</askboardplt:disableOnLinkDown>
         </askboardplt:ledstream-class-manipulation-list>
         <askboardplt:ledstream-class-manipulation-list>
           <askboardplt:classNum askboardplt:type="led-class-num-type">3</askboardplt:classNum>
           <askboardplt:portType askboardplt:type="led-stream-port-type">PORT_TYPE_XG</askboardplt:portType>
-          <askboardplt:blinkEnable askboardplt:type="boolean-type">false</askboardplt:blinkEnable>
+          <askboardplt:blinkEnable askboardplt:type="boolean-type">true</askboardplt:blinkEnable>
           <askboardplt:blinkSelect askboardplt:type="led-stream-blink-select-type">BLINK_SELECT_0</askboardplt:blinkSelect>
           <askboardplt:forceEnable askboardplt:type="boolean-type">false</askboardplt:forceEnable>
           <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">false</askboardplt:pulseStretchEnable>
@@ -1451,7 +1542,7 @@ Ethernet Transceiver</askboardplt:description>
         <askboardplt:ledstream-class-manipulation-list>
           <askboardplt:classNum askboardplt:type="led-class-num-type">4</askboardplt:classNum>
           <askboardplt:portType askboardplt:type="led-stream-port-type">PORT_TYPE_XG</askboardplt:portType>
-          <askboardplt:blinkEnable askboardplt:type="boolean-type">false</askboardplt:blinkEnable>
+          <askboardplt:blinkEnable askboardplt:type="boolean-type">true</askboardplt:blinkEnable>
           <askboardplt:blinkSelect askboardplt:type="led-stream-blink-select-type">BLINK_SELECT_0</askboardplt:blinkSelect>
           <askboardplt:forceEnable askboardplt:type="boolean-type">false</askboardplt:forceEnable>
           <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">false</askboardplt:pulseStretchEnable>
@@ -1460,7 +1551,7 @@ Ethernet Transceiver</askboardplt:description>
         <askboardplt:ledstream-class-manipulation-list>
           <askboardplt:classNum askboardplt:type="led-class-num-type">5</askboardplt:classNum>
           <askboardplt:portType askboardplt:type="led-stream-port-type">PORT_TYPE_XG</askboardplt:portType>
-          <askboardplt:blinkEnable askboardplt:type="boolean-type">false</askboardplt:blinkEnable>
+          <askboardplt:blinkEnable askboardplt:type="boolean-type">true</askboardplt:blinkEnable>
           <askboardplt:blinkSelect askboardplt:type="led-stream-blink-select-type">BLINK_SELECT_0</askboardplt:blinkSelect>
           <askboardplt:forceEnable askboardplt:type="boolean-type">false</askboardplt:forceEnable>
           <askboardplt:pulseStretchEnable askboardplt:type="boolean-type">false</askboardplt:pulseStretchEnable>
