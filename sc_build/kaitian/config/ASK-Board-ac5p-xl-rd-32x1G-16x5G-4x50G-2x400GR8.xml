@@ -1182,7 +1182,7 @@ Ethernet Transceiver</askboardplt:description>
         </askboardplt:phy>
         <askboardplt:serdesMuxScheme askboardplt:type="string">MAP2</askboardplt:serdesMuxScheme>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">0</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">1</askboardplt:ledPosition>
           <askboardplt:polarityInvertList-list>
             <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
             <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
@@ -1202,7 +1202,7 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">1</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">0</askboardplt:ledPosition>
           <askboardplt:polarityInvertList-list>
             <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
             <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
@@ -1222,7 +1222,7 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">2</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">3</askboardplt:ledPosition>
           <askboardplt:polarityInvertList-list>
             <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
             <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
@@ -1242,7 +1242,7 @@ Ethernet Transceiver</askboardplt:description>
           <askboardplt:smiItf askboardplt:type="phy-smi-interface-type">0</askboardplt:smiItf>
         </askboardplt:phy>
         <askboardplt:ledstream-port>
-          <askboardplt:ledPosition askboardplt:type="led-position-type">3</askboardplt:ledPosition>
+          <askboardplt:ledPosition askboardplt:type="led-position-type">2</askboardplt:ledPosition>
           <askboardplt:polarityInvertList-list>
             <askboardplt:polarityClassNum askboardplt:type="led-class-num-type">2</askboardplt:polarityClassNum>
             <askboardplt:invertEnable askboardplt:type="boolean-type">true</askboardplt:invertEnable>
