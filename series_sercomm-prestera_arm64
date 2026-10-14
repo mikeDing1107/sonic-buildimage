@@ -36,3 +36,4 @@ sc_0036_fast_reboot_free_page_cache.patch|src/sonic-utilities
 sc_0037_gnmi_support_ucentral_blink_method.patch|src/sonic-gnmi
 sc_0038_host_services_support_ucentral_blink_method.patch|src/sonic-host-services
 sc_0039_gnmi_go_format_adjustment.patch|src/sonic-gnmi
+sc_0040_fix_system-health_fail.patch|platform/marvell-prestera/sonic-platform-marvell
