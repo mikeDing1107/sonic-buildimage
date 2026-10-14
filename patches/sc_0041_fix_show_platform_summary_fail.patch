@@ -1,0 +1,38 @@
+From 3459306a89ba49d710e65bf09f6531ea78b071dd Mon Sep 17 00:00:00 2001
+From: joshjiang113 <josh_jiang@sdc.sercomm.com>
+Date: Wed, 14 Oct 2026 07:36:17 +0000
+Subject: [PATCH] fix show platform summary is not correct
+
+---
+ show/platform.py | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/show/platform.py b/show/platform.py
+index d3e45c90..a7c6267d 100644
+--- a/show/platform.py
++++ b/show/platform.py
+@@ -52,7 +52,7 @@ def platform():
+ def summary(json):
+     """Show hardware platform information"""
+     platform_info = device_info.get_platform_info()
+-    chassis_info = get_chassis_info()
++    product_info = device_info.get_product_info()
+ 
+     if json:
+         click.echo(clicommon.json_dump({**platform_info, **chassis_info}))
+@@ -61,9 +61,9 @@ def summary(json):
+         click.echo("HwSKU: {}".format(platform_info['hwsku']))
+         click.echo("ASIC: {}".format(platform_info['asic_type']))
+         click.echo("ASIC Count: {}".format(platform_info['asic_count']))
+-        click.echo("Serial Number: {}".format(chassis_info['serial']))
+-        click.echo("Model Number: {}".format(chassis_info['model']))
+-        click.echo("Hardware Revision: {}".format(chassis_info['revision']))
++        click.echo("Serial Number: {}".format(product_info['serial']))
++        click.echo("Model Number: {}".format(product_info['model']))
++        click.echo("Hardware Revision: {}".format(product_info['revision']))
+         switch_type = platform_info.get('switch_type')
+         if switch_type:
+             click.echo("Switch Type: {}".format(switch_type))
+-- 
+2.25.1
+
