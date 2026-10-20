@@ -1,0 +1,26 @@
+diff --git a/scripts/procdockerstatsd b/scripts/procdockerstatsd
+index c0600fd..d8abfe3 100755
+--- a/scripts/procdockerstatsd
++++ b/scripts/procdockerstatsd
+@@ -141,9 +141,18 @@ class ProcDockerStats(daemon_base.DaemonBase):
+         pid_set = set()
+ 
+         processes_all = []
+-        for process_obj in psutil.process_iter(['pid', 'ppid', 'memory_percent', 'cpu_percent', 'create_time', 'cmdline']):
+-            processes_all.append(process_obj)
+-        sorted_processes = sorted(processes_all, key=lambda x: x.cpu_percent(), reverse=True)
++        try:
++            for process_obj in psutil.process_iter(['pid', 'ppid', 'memory_percent', 'cpu_percent', 'create_time', 'cmdline']):
++                processes_all.append(process_obj)
++        except (psutil.NoSuchProcess, psutil.AccessDenied):
++            pass
++
++        def _cpu_key(p):
++            try:
++                return p.cpu_percent()
++            except (psutil.NoSuchProcess, psutil.AccessDenied):
++                return 0.0
++        sorted_processes = sorted(processes_all, key=_cpu_key, reverse=True)
+         top_processes = sorted_processes[:1024]
+ 
+         for process_obj in top_processes:
