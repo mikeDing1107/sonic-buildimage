@@ -444,10 +444,6 @@ sudo mkdir -p $FILESYSTEM_ROOT/etc/systemd/system/syslog.socket.d
 sudo cp $IMAGE_CONFIGS/syslog/override.conf $FILESYSTEM_ROOT/etc/systemd/system/syslog.socket.d/override.conf
 sudo cp $IMAGE_CONFIGS/syslog/host_umount.sh $FILESYSTEM_ROOT/usr/bin/
 
-# Copy cpu monitor files
-sudo cp $IMAGE_CONFIGS/cpu-monitor/cpu-monitor.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM
-sudo LANG=C chroot $FILESYSTEM_ROOT systemctl enable cpu-monitor.service
-sudo cp $IMAGE_CONFIGS/cpu-monitor/cpu-monitor.sh $FILESYSTEM_ROOT/usr/local/bin/
 
 # Copy system-health files
 sudo LANG=C cp $IMAGE_CONFIGS/system-health/system-health.service $FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM
