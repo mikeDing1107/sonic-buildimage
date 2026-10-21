@@ -43,3 +43,8 @@ send dhcp6.user-class "SONiC-ZTP";
 send dhcp-client-identifier "SONiC##{{ ZTP['mode']['product-name'] }}##{{ ZTP['mode']['serial-no'] }}";
 retry 60;
 {% endif %}
+# MGMT DHCP retry (Sercomm KaiTian customization): dhclient stock default is
+# 300s between retries when no DHCP server responds, which delays mgmt IP
+# recovery when the management cable is plugged in after boot. Override to
+# 60s (same value SONiC uses for ZTP-enabled builds).
+retry 60;

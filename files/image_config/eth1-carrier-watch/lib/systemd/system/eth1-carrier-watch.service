@@ -1,0 +1,12 @@
+[Unit]
+Description=eth1 carrier watcher - force DHCP on management link up
+After=networking.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/eth1-carrier-watch.sh eth1
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

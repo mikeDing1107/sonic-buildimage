@@ -970,7 +970,16 @@ sudo cp $IMAGE_CONFIGS/fake-hwclock/etc/default/fake-hwclock $FILESYSTEM_ROOT/et
 sudo mkdir -p $FILESYSTEM_ROOT/etc/systemd/system/sysinit.target.wants
 sudo ln -sf /lib/systemd/system/fake-hwclock.service $FILESYSTEM_ROOT/etc/systemd/system/sysinit.target.wants/fake-hwclock.service
 echo "2000-01-01 00:00:00" | sudo tee $FILESYSTEM_ROOT/etc/fake-hwclock.data > /dev/null
-
+# eth1-carrier-watch: force DHCP re-negotiation when the management link
+# (eth1) comes up while the interface has no IPv4 yet (mgmt cable plugged
+# in after boot). KaiTian mgmt port is eth1; isc-dhclient has no link
+# awareness, so without this the mgmt IP can take minutes to recover.
+sudo mkdir -p $FILESYSTEM_ROOT/usr/local/bin ${FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM}
+sudo cp $IMAGE_CONFIGS/eth1-carrier-watch/usr/local/bin/eth1-carrier-watch.sh $FILESYSTEM_ROOT/usr/local/bin/
+sudo cp $IMAGE_CONFIGS/eth1-carrier-watch/lib/systemd/system/eth1-carrier-watch.service ${FILESYSTEM_ROOT_USR_LIB_SYSTEMD_SYSTEM}/
+sudo chmod +x $FILESYSTEM_ROOT/usr/local/bin/eth1-carrier-watch.sh
+sudo mkdir -p $FILESYSTEM_ROOT/etc/systemd/system/multi-user.target.wants
+sudo ln -sf /lib/systemd/system/eth1-carrier-watch.service $FILESYSTEM_ROOT/etc/systemd/system/multi-user.target.wants/eth1-carrier-watch.service
 {% macro get_install_options(set_owner, enabled) -%}
 {% set args = ["-y", "-v", "DEBUG"] -%}
 {% if set_owner -%}
