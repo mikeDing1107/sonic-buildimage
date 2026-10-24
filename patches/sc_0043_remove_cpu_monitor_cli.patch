@@ -1,3 +1,18 @@
+From 9a412e12deb758329fcd8d8c8518f49d96a18079 Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sdc.sercomm.com>
+Date: Tue, 20 Oct 2026 17:33:00 +0800
+Subject: [PATCH] remove cpu-monitor CLI
+
+Remove config/cpu_monitor.py and show/cpu_monitor.py and their command registrations, reversing the cpu-monitor CLI added by sc_0005.
+---
+ config/cpu_monitor.py | 33 ---------------------------------
+ config/main.py        |  2 --
+ show/cpu_monitor.py   | 30 ------------------------------
+ show/main.py          |  2 --
+ 4 files changed, 67 deletions(-)
+ delete mode 100755 config/cpu_monitor.py
+ delete mode 100755 show/cpu_monitor.py
+
 diff --git a/config/cpu_monitor.py b/config/cpu_monitor.py
 deleted file mode 100755
 index 618dcfba..00000000
@@ -113,3 +128,6 @@ index b8cb8f8a..eb4a53ed 100755
  cli.add_command(ucentral.ucentral)
  
  # syslog module
+-- 
+2.25.1
+

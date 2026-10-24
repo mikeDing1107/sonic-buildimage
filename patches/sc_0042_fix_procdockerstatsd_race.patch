@@ -1,3 +1,14 @@
+From 1a564478b622644770c0fc0ec55dd2952d76f887 Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sdc.sercomm.com>
+Date: Tue, 20 Oct 2026 14:12:00 +0800
+Subject: [PATCH] fix procdockerstatsd crash when process exits during
+ enumeration
+
+Guard psutil.process_iter() and the sort key against NoSuchProcess so the daemon stops crashing (~1/hour under normal churn, minutes under heavy churn). Reproduced on kaitian board with process churn before the fix; no crash after.
+---
+ scripts/procdockerstatsd | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
 diff --git a/scripts/procdockerstatsd b/scripts/procdockerstatsd
 index c0600fd..d8abfe3 100755
 --- a/scripts/procdockerstatsd
@@ -24,3 +35,6 @@ index c0600fd..d8abfe3 100755
          top_processes = sorted_processes[:1024]
  
          for process_obj in top_processes:
+-- 
+2.25.1
+
