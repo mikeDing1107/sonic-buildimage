@@ -435,25 +435,33 @@ patch_sai_url_path()
 
 apply_sercomm_patches()
 {
-	CWD=`pwd`
-	cat series_sercomm-prestera_arm64 | grep -v -E '^#|^$' | grep -v sonic-buildimage | while read -r line
- do
+    CWD=`pwd`
+    local err_cnt=0
+    # NOTE: process substitution keeps the loop in the current shell;
+    # a pipeline would run it in a subshell and swallow err_cnt/return
+    while read -r line
+    do
         patch=`echo $line | cut -f 1 -d'|'`
         dir=`echo $line | cut -f 2 -d'|'`
-        pushd ${dir}
+        pushd ${dir} || { echo "ERROR: cannot enter submodule ${dir}" >&2; return 1; }
         git am $CWD/patches/${patch}
         ret=$?
         if [ $ret -ne 0 ]; then
-        ((err_cnt++))
-                if [ "$PATCH_ERR_SKIP" == "" ]; then
-                        log "PATCH ERROR: Failed to apply submodule $CWD/patches/${patch}, abort"
-                        return $ret
-                fi
-                log "PATCH ERROR: Failed to apply submodule $CWD/patches/${patch}, skeep and continue"
-                git am --skip
+            ((err_cnt++))
+            if [ "$PATCH_ERR_SKIP" == "" ]; then
+                echo "PATCH ERROR: Failed to apply submodule $CWD/patches/${patch}, abort" >&2
+                popd
+                return $ret
+            fi
+            echo "PATCH ERROR: Failed to apply submodule $CWD/patches/${patch}, skip and continue" >&2
+            git am --skip
         fi
         popd
- done
+    done < <(grep -v -E '^#|^$' series_sercomm-prestera_arm64 | grep -v sonic-buildimage)
+    if [ "$err_cnt" -gt 0 ]; then
+        echo "PATCH WARNING: $err_cnt patch(es) failed and were skipped" >&2
+    fi
+    return 0
 }
 
 patch_ws()
@@ -481,6 +489,10 @@ patch_ws()
         fi
 
 	apply_sercomm_patches
+	if [ $? -ne 0 ]; then
+		echo "ERROR: Sercomm patches failed to apply, abort" >&2
+		return 1
+	fi
 	cp sc_build/kaitian/dts/* platform/marvell-prestera/mrvl-prestera/platform/arm64/common/boot/
 	cp sc_build/kaitian/config/* device/marvell/arm64-marvell_rd98DX45xx_cn9131-r0/rd98DX45xx_cn9131/
 	cp sc_build/kaitian/profile/pmon_daemon_control.json device/marvell/arm64-marvell_rd98DX45xx_cn9131-r0/
@@ -768,7 +780,7 @@ main()
     #clone_ws
 
     if [ ! -f patch_done ]; then
-    	patch_ws
+    	patch_ws || { echo "ERROR: patch_ws failed, abort" >&2; exit 1; }
     fi
     if [ "$VERIFY_PATCHES" == "Y" ]; then
         exit 0
