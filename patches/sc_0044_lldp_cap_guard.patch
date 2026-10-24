@@ -1,0 +1,39 @@
+From 7375eb1fb11de117f18137b8e9c9245a16b70c32 Mon Sep 17 00:00:00 2001
+From: mike_ding <mike_ding@sercomm.com>
+Date: Fri, 23 Oct 2026 03:59:28 +0000
+Subject: [PATCH] fix: guard getRemoteSysCap against empty LLDP system
+ capabilities
+
+LLDP neighbors that omit the system capabilities TLV (e.g. some laptop
+NICs) produce empty lldp_rem_sys_cap_supported/lldp_rem_sys_cap_enabled
+in APPL_DB. translib's getRemoteSysCap() did strings.Split() then indexed
+[1] unconditionally, panicking the gnmi/telemetry process (exit 2) and
+crash-looping the gnmi container. Skip malformed capabilities instead.
+---
+ translib/lldp_app.go | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/translib/lldp_app.go b/translib/lldp_app.go
+index 1551171..9222b38 100644
+--- a/translib/lldp_app.go
++++ b/translib/lldp_app.go
+@@ -395,7 +395,15 @@ func (app *lldpApp) getLldpInfoFromDB(ifname *string) {
+ /** Helper function to get remote system capabilities into a map **/
+ func (app *lldpApp) getRemoteSysCap(capb string, ifname string, setCap bool) {
+ 	num_str := strings.Split(capb, " ")
+-	byte, _ := hex.DecodeString(num_str[0] + num_str[1])
++	if len(num_str) < 2 {
++		log.Info("Invalid LLDP system capabilities (missing fields) for interface: ", ifname)
++		return
++	}
++	byte, err := hex.DecodeString(num_str[0] + num_str[1])
++	if err != nil || len(byte) < 2 {
++		log.Info("Invalid LLDP system capabilities (bad hex) for interface: ", ifname)
++		return
++	}
+ 	sysCap := byte[0]
+ 	sysCap |= byte[1]
+ 
+-- 
+2.25.1
+
