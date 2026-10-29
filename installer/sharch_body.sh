@@ -10,7 +10,10 @@
 ## Strings of the form %%VAR%% are replaced during construction.
 ##
 
+LOG_FILE="/home/admin/install_debug.log"
+
 echo -n "Verifying image checksum ..."
+echo -n "Verifying image checksum ..." >> "$LOG_FILE" 2>/dev/null
 payload_image_size=%%PAYLOAD_IMAGE_SIZE%%
 
 sha1=$(sed -e '1,/^exit_marker$/d' "$0" | head -c $payload_image_size | sha1sum | awk '{ print $1 }')
@@ -26,6 +29,7 @@ if [ "$sha1" != "$payload_sha1" ] ; then
 fi
 
 echo " OK."
+echo " OK." >> "$LOG_FILE" 2>/dev/null
 
 image_size_in_kb=$((($(sed -e '1,/^exit_marker$/d' "$0"  | tar --to-stdout -xf - | wc -c) + 1023 ) / 1024))
 # Untar and launch install script in a tmpfs
@@ -47,10 +51,12 @@ if [ "$(id -u)" = "0" ] ; then
 fi
 cd $tmp_dir
 echo -n "Preparing image archive ..."
+echo -n "Preparing image archive ..." >> "$LOG_FILE" 2>/dev/null
 
 sed -e '1,/^exit_marker$/d' $archive_path | head -c $payload_image_size | tar xf - || exit 1
 
 echo " OK."
+echo " OK." >> "$LOG_FILE" 2>/dev/null
 cd $cur_wd
 if [ -n "$extract" ] ; then
     # stop here

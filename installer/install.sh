@@ -45,15 +45,20 @@ read_conf_file() {
 
 set -e
 
+LOG_FILE="/home/admin/install_debug.log"
+
 if [ -d "/etc/sonic" ]; then
     echo "Installing SONiC in SONiC"
+    echo "Installing SONiC in SONiC" >> "$LOG_FILE" 2>/dev/null
     install_env="sonic"
 elif grep -Fxqs "DISTRIB_ID=onie" /etc/lsb-release > /dev/null
 then
     echo "Installing SONiC in ONIE"
+    echo "Installing SONiC in ONIE" >> "$LOG_FILE" 2>/dev/null
     install_env="onie"
 else
     echo "Installing SONiC in BUILD"
+    echo "Installing SONiC in BUILD" >> "$LOG_FILE" 2>/dev/null
     install_env="build"
 fi
 
@@ -73,6 +78,7 @@ if [ -r ./onie-image-*.conf ]; then
 fi
 
 echo "ONIE Installer: platform: $platform"
+echo "ONIE Installer: platform: $platform" >> "$LOG_FILE" 2>/dev/null
 
 # Make sure run as root or under 'sudo'
 if [ $(id -u) -ne 0 ]
@@ -92,6 +98,7 @@ fi
 
 
 echo "onie_platform: $onie_platform"
+echo "onie_platform: $onie_platform" >> "$LOG_FILE" 2>/dev/null
 
 # Get platform specific linux kernel command line arguments
 ONIE_PLATFORM_EXTRA_CMDLINE_LINUX=""
@@ -205,6 +212,7 @@ else
 fi
 
 echo "Installing SONiC to $demo_mnt/$image_dir"
+echo "Installing SONiC to $demo_mnt/$image_dir" >> "$LOG_FILE" 2>/dev/null
 
 # Create target directory or clean it up if exists
 if [ -d $demo_mnt/$image_dir ]; then
