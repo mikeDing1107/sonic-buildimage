@@ -149,6 +149,9 @@ INCLUDE_RESTAPI ?= n
 # INCLUDE_NAT - build docker-nat for nat support
 INCLUDE_NAT = y
 
+# INCLUDE_SNMP - build docker-snmp for SNMP agent support
+INCLUDE_SNMP = n
+
 # INCLUDE_DHCP_RELAY - build and install dhcp-relay package
 INCLUDE_DHCP_RELAY = y
 

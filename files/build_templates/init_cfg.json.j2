@@ -71,7 +71,6 @@
                    ("database", "always_enabled", false, "always_enabled"),
                    ("lldp", "enabled", true, "enabled"),
                    ("pmon", "enabled", "{% if 'type' in DEVICE_METADATA['localhost'] and DEVICE_METADATA['localhost']['type'] == 'SpineRouter' %}False{% else %}True{% endif %}", "enabled"),
-                   ("snmp", "enabled", true, "enabled"),
                    ("swss", "enabled", false, "enabled"),
                    ("syncd", "enabled", false, "enabled")] %}
 {%- if include_router_advertiser == "y" %}{% do features.append(("radv", "enabled", false, "enabled")) %}{% endif %}
