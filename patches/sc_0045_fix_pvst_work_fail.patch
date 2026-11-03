@@ -1,0 +1,88 @@
+From c92d5f33f678a7f173678466d128c159435be258 Mon Sep 17 00:00:00 2001
+From: josh_jiang <josh_jiang@sercomm.com>
+Date: Tue, 3 Nov 2026 08:11:02 +0000
+Subject: [PATCH] fix pvst doesn't work
+
+---
+ include/l2.h         | 8 ++++----
+ include/stp_common.h | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/include/l2.h b/include/l2.h
+index e0533c4..ef45938 100755
+--- a/include/l2.h
++++ b/include/l2.h
+@@ -85,13 +85,13 @@
+  
+ 	 BYTE protocol_id_filler[3];
+ 	 UINT16 protocol_id;
+- } __attribute__((aligned(2))) SNAP_HEADER;
++ } __attribute__((packed)) SNAP_HEADER;
+  
+  typedef struct MAC_ADDRESS
+  {
+ 	 UINT32 _ulong;
+ 	 UINT16 _ushort;
+- } __attribute__((aligned(4))) MAC_ADDRESS;
++ } __attribute__((packed)) MAC_ADDRESS;
+  
+  #define COPY_MAC(sptr_mac2, sptr_mac1) \
+ 	 (memcpy(sptr_mac2, sptr_mac1, sizeof(MAC_ADDRESS)))
+@@ -111,7 +111,7 @@
+ 	 MAC_ADDRESS source_address;
+  
+ 	 USHORT length;
+- } __attribute__((aligned(4))) MAC_HEADER;
++ } __attribute__((packed)) MAC_HEADER;
+  
+  #define STP_BPDU_OFFSET (sizeof(MAC_HEADER) + sizeof(LLC_HEADER))
+  #define PVST_BPDU_OFFSET (sizeof(MAC_HEADER) + sizeof(SNAP_HEADER))
+@@ -186,4 +186,4 @@
+ 	 memset(_instance_mask_ptr_, 0, sizeof(L2_PROTO_INSTANCE_MASK))
+  
+  #endif //__L2_H__
+- 
+\ No newline at end of file
++ 
+diff --git a/include/stp_common.h b/include/stp_common.h
+index 376e530..65226f9 100755
+--- a/include/stp_common.h
++++ b/include/stp_common.h
+@@ -112,7 +112,7 @@ typedef struct STP_CONFIG_BPDU
+ 	UINT16 max_age;
+ 	UINT16 hello_time;
+ 	UINT16 forward_delay;
+-} __attribute__((aligned(4))) STP_CONFIG_BPDU;
++} __attribute__((packed)) STP_CONFIG_BPDU;
+ 
+ // spanning-tree topology change notification bpdu
+ typedef struct STP_TCN_BPDU
+@@ -123,7 +123,7 @@ typedef struct STP_TCN_BPDU
+ 	UINT8 protocol_version_id;
+ 	UINT8 type;
+ 	UINT8 padding[3];
+-} __attribute__((aligned(4))) STP_TCN_BPDU;
++} __attribute__((packed)) STP_TCN_BPDU;
+ 
+ // pvst configuration bpdu
+ typedef struct PVST_CONFIG_BPDU
+@@ -145,7 +145,7 @@ typedef struct PVST_CONFIG_BPDU
+ 	UINT8 padding[3];
+ 	UINT16 tag_length;
+ 	UINT16 vlan_id;
+-} __attribute__((aligned(4))) PVST_CONFIG_BPDU;
++} __attribute__((packed)) PVST_CONFIG_BPDU;
+ 
+ // pvst topology change notification bpdu
+ typedef struct PVST_TCN_BPDU
+@@ -156,6 +156,6 @@ typedef struct PVST_TCN_BPDU
+ 	UINT8 protocol_version_id;
+ 	UINT8 type;
+ 	UINT8 padding[38];
+-} __attribute__((aligned(4))) PVST_TCN_BPDU;
++} __attribute__((packed)) PVST_TCN_BPDU;
+ 
+ #endif //__STP_COMMON_H__
+-- 
+2.25.1
+
