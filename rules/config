@@ -147,7 +147,7 @@ ENABLE_HOST_SERVICE_ON_START = y
 INCLUDE_RESTAPI ?= n
 
 # INCLUDE_NAT - build docker-nat for nat support
-INCLUDE_NAT = y
+INCLUDE_NAT = n
 
 # INCLUDE_SNMP - build docker-snmp for SNMP agent support
 INCLUDE_SNMP = n
