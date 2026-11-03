@@ -300,7 +300,7 @@ REGISTRY_SERVER_PATH ?=
 BUILD_MULTIASIC_KVM = n
 
 # INCLUDE_MUX - build docker-mux for dual ToR (Gemini)
-INCLUDE_MUX = y
+INCLUDE_MUX = n
 
 # ENABLE_ASAN - enable address sanitizer
 ENABLE_ASAN ?= n
