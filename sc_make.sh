@@ -478,6 +478,8 @@ patch_ws()
         else
             cp $PATCH_SCRIPT_URL .
         fi
+        # kaitian does not need Wistron ES1227: drop the ES1227 patches from the Marvell series
+        sed -i '/wget_cp_silent \$WGET_PATH\/\${PATCH_SERIES_FILE}/a\    sed -i "/-Add-Wistron-platform-ES1227/d" patches/${PATCH_SERIES_FILE}' marvell_sonic_patch_script.sh
         commit_id_get_upstream
         echo "bash marvell_sonic_patch_script.sh --branch ${BRANCH} --platform ${BUILD_PLATFORM} --arch ${BUILD_PLATFORM_ARCH} --url ${URL}" >> build_cmd.txt
         bash marvell_sonic_patch_script.sh --branch ${BRANCH} --platform ${BUILD_PLATFORM} --arch ${BUILD_PLATFORM_ARCH} --url ${URL}
