@@ -8,7 +8,6 @@ import syslog
 import time
 import datetime
 
-import docker
 from swsscommon import swsscommon
 
 CTRMGRD_SERVICE_PATH = '/lib/systemd/system/ctrmgrd.service'
@@ -120,6 +119,7 @@ def read_server_state():
 
 def docker_action(action, feature, **kwargs):
     """ Execute docker action """
+    import docker
     try:
         client = docker.from_env()
         container = client.containers.get(feature)
@@ -134,22 +134,21 @@ def docker_action(action, feature, **kwargs):
 
 
 def container_version(feature):
-    """ Get container image version """
+    """ Get container image version via docker CLI (keeps the wait path free of docker-py) """
     version = None
     try:
-        client = docker.from_env()
-        container = client.containers.get(feature)
-        envs = container.attrs['Config']['Env']
-        for env in envs:
-            if env.startswith("IMAGE_VERSION="):
-                version = env.split('=')[1]
-
+        import subprocess
+        p = subprocess.run(['/usr/bin/docker', 'inspect', '--format',
+                            '{{range .Config.Env}}{{println .}}{{end}}', feature],
+                           capture_output=True, text=True)
+        for line in p.stdout.splitlines():
+            if line.startswith("IMAGE_VERSION="):
+                version = line.split('=', 1)[1]
+                break
         syslog.syslog(syslog.LOG_INFO, "docker get image version for {}".format(feature))
-
-    except (docker.errors.NotFound, docker.errors.APIError) as err:
+    except Exception as err:
         syslog.syslog(syslog.LOG_ERR, "docker get image version for {} failed with {}".
                 format(feature, str(err)))
-
     return version
 
 
@@ -372,6 +371,22 @@ def container_kill(feature, **kwargs):
     return ret
 
 
+def docker_wait_cli(container_id):
+    """ Block on `docker wait <id>` via the docker CLI (C binary, low RSS).
+        Mirrors docker_action('wait') semantics: SUCCESS once the container
+        stops, FAILURE if the wait itself errors (e.g. container missing). """
+    import subprocess
+    try:
+        p = subprocess.run(['/usr/bin/docker', 'wait', container_id], capture_output=True)
+        syslog.syslog(syslog.LOG_INFO, "docker cmd: wait for {} (rc {})".format(container_id, p.returncode))
+        if p.returncode != 0 and p.stderr:
+            return FAILURE
+        return SUCCESS
+    except Exception as err:
+        syslog.syslog(syslog.LOG_ERR, "docker cmd: wait for {} failed with {}".format(container_id, str(err)))
+        return FAILURE
+
+
 def container_wait(feature, **kwargs):
     """
     Waits on the running container for this feature.
@@ -431,7 +446,7 @@ def container_wait(feature, **kwargs):
                 format(feature))
     else:
         debug_msg("END -- transitioning to docker wait")
-        ret = docker_action("wait", docker_id, **kwargs)
+        ret = docker_wait_cli(docker_id)
 
     return ret
 
