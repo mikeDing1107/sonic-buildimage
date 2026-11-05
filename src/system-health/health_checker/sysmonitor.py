@@ -472,10 +472,12 @@ class Sysmonitor(ProcessTaskBase):
 
         try:
             monitor_system_bus = MonitorSystemBusTask(self.myQ)
-            monitor_system_bus.task_run()
+            # B1(kaitian): disable systemd event monitoring to save RAM
+            # monitor_system_bus.task_run()
 
             monitor_statedb_table = MonitorStateDbTask(self.myQ)
-            monitor_statedb_table.task_run()
+            # B1(kaitian): disable STATE_DB event monitoring to save RAM
+            # monitor_statedb_table.task_run()
 
         except Exception as e:
             logger.log_error("SubProcess-{}".format(str(e)))
@@ -506,8 +508,9 @@ class Sysmonitor(ProcessTaskBase):
         self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "ALL_SERVICE_STATUS|*")
         self.state_db.delete_all_by_pattern(self.state_db.STATE_DB, "SYSTEM_READY|*")
 
-        monitor_system_bus.task_stop()
-        monitor_statedb_table.task_stop()
+        # B1(kaitian): tasks not started, no task_stop needed
+        # monitor_system_bus.task_stop()
+        # monitor_statedb_table.task_stop()
 
     def task_worker(self):
         self.system_service()
