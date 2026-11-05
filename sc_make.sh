@@ -484,6 +484,8 @@ patch_ws()
         echo "bash marvell_sonic_patch_script.sh --branch ${BRANCH} --platform ${BUILD_PLATFORM} --arch ${BUILD_PLATFORM_ARCH} --url ${URL}" >> build_cmd.txt
         bash marvell_sonic_patch_script.sh --branch ${BRANCH} --platform ${BUILD_PLATFORM} --arch ${BUILD_PLATFORM_ARCH} --url ${URL}
         check_error $? "patch_script"
+        # Marvell prestera_hwsku.tgz carries the Wistron ES2227-54TS-P hwsku dir; kaitian does not need it
+        rm -rf device/wistron/arm64-wistron_es2227_54ts_p-r0
         commit_id_update
 
         if ! [ -z "${SAI_URL_PATH}" ]; then
