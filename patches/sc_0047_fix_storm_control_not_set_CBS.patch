@@ -1,0 +1,37 @@
+From ce9db15277ec9fc35d5c7afc8eb276bb04dc5617 Mon Sep 17 00:00:00 2001
+From: josh_jiang <josh_jiang@sercomm.com>
+Date: Fri, 6 Nov 2026 09:29:46 +0000
+Subject: [PATCH] fix storm control not set CBS
+
+---
+ orchagent/policerorch.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/orchagent/policerorch.cpp b/orchagent/policerorch.cpp
+index 68dfffe8..9138ebc8 100644
+--- a/orchagent/policerorch.cpp
++++ b/orchagent/policerorch.cpp
+@@ -183,6 +183,11 @@ task_process_status PolicerOrch::handlePortStormControlTable(swss::KeyOpFieldsVa
+                 cir = true;
+                 attrs.push_back(attr);
+                 SWSS_LOG_DEBUG("CIR %s",value.c_str());
++
++		attr.id = SAI_POLICER_ATTR_CBS;
++		attr.value.u64 = (stoul(value)*1000/8);
++		attrs.push_back(attr);
++		SWSS_LOG_DEBUG("CBS %s",value.c_str());
+             }
+             else
+             {
+@@ -249,7 +254,7 @@ task_process_status PolicerOrch::handlePortStormControlTable(swss::KeyOpFieldsVa
+             // STORM_CONTROL: CIR, CBS
+             for (auto & attr: attrs)
+             {
+-                if (attr.id != SAI_POLICER_ATTR_CIR)
++                if (attr.id != SAI_POLICER_ATTR_CIR && attr.id != SAI_POLICER_ATTR_CBS)
+                 {
+                     continue;
+                 }
+-- 
+2.25.1
+
