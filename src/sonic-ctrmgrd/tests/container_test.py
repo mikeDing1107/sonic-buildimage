@@ -552,8 +552,10 @@ class TestContainer(object):
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
     @patch("docker.from_env")
-    def test_wait(self, mock_docker, mock_table, mock_conn):
+    @patch("subprocess.Popen")
+    def test_wait(self, mock_subproc, mock_docker, mock_table, mock_conn):
         self.init()
+        common_test.set_kube_mock(mock_subproc, mock_table, mock_conn)
         common_test.set_mock(mock_table, mock_conn, mock_docker)
 
         for (i, ct_data) in wait_test_data.items():

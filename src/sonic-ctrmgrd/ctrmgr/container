@@ -138,9 +138,10 @@ def container_version(feature):
     version = None
     try:
         import subprocess
-        p = subprocess.run('/usr/bin/docker inspect --format {{range .Config.Env}}{{println .}}{{end}} '
-                           + feature, shell=True, capture_output=True)
-        out = p.stdout.decode() if isinstance(p.stdout, bytes) else str(p.stdout)
+        p = subprocess.Popen('/usr/bin/docker inspect --format {{range .Config.Env}}{{println .}}{{end}} '
+                             + feature, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, _ = p.communicate()
+        out = out.decode() if isinstance(out, bytes) else str(out)
         for line in out.splitlines():
             if line.startswith("IMAGE_VERSION="):
                 version = line.split('=', 1)[1]
@@ -377,9 +378,11 @@ def docker_wait_cli(container_id):
         stops, FAILURE if the wait itself errors (e.g. container missing). """
     import subprocess
     try:
-        p = subprocess.run('/usr/bin/docker wait ' + container_id, shell=True, capture_output=True)
+        p = subprocess.Popen('/usr/bin/docker wait ' + container_id,
+                            shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        _, err = p.communicate()
         syslog.syslog(syslog.LOG_INFO, "docker cmd: wait for {} (rc {})".format(container_id, p.returncode))
-        if p.returncode != 0 and p.stderr:
+        if p.returncode != 0 and err:
             return FAILURE
         return SUCCESS
     except Exception as err:
