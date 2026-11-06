@@ -469,7 +469,7 @@ class TestContainer(object):
 
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
-    @patch("container.docker.from_env")
+    @patch("docker.from_env")
     def test_start(self, mock_docker, mock_table, mock_conn):
         self.init()
         common_test.set_mock(mock_table, mock_conn, mock_docker)
@@ -489,7 +489,7 @@ class TestContainer(object):
 
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
-    @patch("container.docker.from_env")
+    @patch("docker.from_env")
     def test_stop_ct(self, mock_docker, mock_table, mock_conn):
         self.init()
         common_test.set_mock(mock_table, mock_conn, mock_docker)
@@ -508,7 +508,7 @@ class TestContainer(object):
 
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
-    @patch("container.docker.from_env")
+    @patch("docker.from_env")
     def test_kill(self, mock_docker, mock_table, mock_conn):
         self.init()
         common_test.set_mock(mock_table, mock_conn, mock_docker)
@@ -526,7 +526,7 @@ class TestContainer(object):
 
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
-    @patch("container.docker.from_env")
+    @patch("docker.from_env")
     def test_invalid_kill(self, mock_docker, mock_table, mock_conn):
         self.init()
         common_test.set_mock(mock_table, mock_conn, mock_docker)
@@ -545,7 +545,7 @@ class TestContainer(object):
 
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
-    @patch("container.docker.from_env")
+    @patch("docker.from_env")
     def test_wait(self, mock_docker, mock_table, mock_conn):
         self.init()
         common_test.set_mock(mock_table, mock_conn, mock_docker)
@@ -564,7 +564,7 @@ class TestContainer(object):
 
     @patch("container.swsscommon.DBConnector")
     @patch("container.swsscommon.Table")
-    @patch("container.docker.from_env")
+    @patch("docker.from_env")
     def test_main(self, mock_docker, mock_table, mock_conn):
         self.init()
         common_test.set_mock(mock_table, mock_conn, mock_docker)
