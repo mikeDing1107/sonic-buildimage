@@ -417,6 +417,12 @@ wait_test_data = {
                 }
             }
         },
+        common_test.PROC_CMD: [
+            "/usr/bin/docker inspect*",
+            "/usr/bin/docker wait*"
+        ],
+        common_test.PROC_OUT: ["IMAGE_VERSION=20201231.11\n", ""],
+        common_test.PROC_CODE: [0, 0],
         common_test.ACTIONS: {
             "snmp": [ "wait" ]
         }

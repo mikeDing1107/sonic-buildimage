@@ -138,10 +138,10 @@ def container_version(feature):
     version = None
     try:
         import subprocess
-        p = subprocess.run(['/usr/bin/docker', 'inspect', '--format',
-                            '{{range .Config.Env}}{{println .}}{{end}}', feature],
-                           capture_output=True, text=True)
-        for line in p.stdout.splitlines():
+        p = subprocess.run('/usr/bin/docker inspect --format {{range .Config.Env}}{{println .}}{{end}} '
+                           + feature, shell=True, capture_output=True)
+        out = p.stdout.decode() if isinstance(p.stdout, bytes) else str(p.stdout)
+        for line in out.splitlines():
             if line.startswith("IMAGE_VERSION="):
                 version = line.split('=', 1)[1]
                 break
@@ -377,7 +377,7 @@ def docker_wait_cli(container_id):
         stops, FAILURE if the wait itself errors (e.g. container missing). """
     import subprocess
     try:
-        p = subprocess.run(['/usr/bin/docker', 'wait', container_id], capture_output=True)
+        p = subprocess.run('/usr/bin/docker wait ' + container_id, shell=True, capture_output=True)
         syslog.syslog(syslog.LOG_INFO, "docker cmd: wait for {} (rc {})".format(container_id, p.returncode))
         if p.returncode != 0 and p.stderr:
             return FAILURE
