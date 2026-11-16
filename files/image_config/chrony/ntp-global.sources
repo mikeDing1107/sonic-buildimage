@@ -3,3 +3,5 @@
 pool pool.ntp.org iburst
 server time.google.com iburst
 server time.cloudflare.com iburst
+server 172.21.1.231
+server 172.26.1.253
