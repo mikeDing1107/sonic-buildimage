@@ -19,6 +19,15 @@
 # statically, or if ifupdown2 changes how it invokes dhclient, this watcher
 # keeps working without stale hardcoded parameters.
 #
+# chrony recovery (added 2026-11-18): chronyd starts early in boot, before
+# eth1 has a DHCP lease. IP-literal NTP sources then load as "offline" and
+# chrony never brings them back online on its own, so NTP never syncs.
+# While eth1 has IPv4, periodically check for offline chrony sources and
+# re-assert them online (`chronyc -a online` is idempotent). The cooldown
+# is NOT consumed while chronyd is unreachable, so the first check right
+# after chronyd starts (still within the DHCP window) re-asserts sources
+# online immediately instead of waiting out the cooldown.
+#
 # Usage: eth1-carrier-watch.sh [iface]   (default: eth1)
 IFACE=${1:-eth1}
 PREV_CARRIER=""
@@ -28,6 +37,9 @@ LAST_ACTION=0
 # see as a new link-up edge and re-trigger itself; cooldown prevents that
 # loop. Also rate-limits the self-heal path.
 ACTION_COOLDOWN=120
+# How often to re-check chrony source state while eth1 has IPv4.
+NTP_COOLDOWN=120
+LAST_NTP_ONLINE=0
 
 log() {
     logger -t eth1-carrier-watch "$*"
@@ -43,6 +55,20 @@ reconfigure_iface() {
 
 has_ipv4() {
     ip -4 addr show dev "$IFACE" 2>/dev/null | grep -q ' inet '
+}
+
+# Bring any offline chrony sources back online (idempotent). Only logs when
+# there actually were offline sources. If chronyd is not reachable yet
+# (e.g. it starts after eth1 gets its lease), returns without consuming the
+# cooldown so the next loop iteration retries immediately.
+reassert_chrony_sources() {
+    ACTIVITY=$(chronyc activity 2>/dev/null) || return 0
+    OFF=$(echo "$ACTIVITY" | awk '/sources offline/{print $1+0}')
+    if [ "${OFF:-0}" -gt 0 ]; then
+        log "chrony has $OFF offline source(s), setting sources online"
+        chronyc -a online >/dev/null 2>&1 || true
+    fi
+    LAST_NTP_ONLINE=$(date +%s)
 }
 
 log "eth1-carrier-watch starting (iface=$IFACE)"
@@ -71,6 +97,15 @@ while true; do
         NOW=$(date +%s)
         if [ $((NOW - LAST_ACTION)) -ge "$ACTION_COOLDOWN" ]; then
             reconfigure_iface
+        fi
+    fi
+
+    # chrony recovery: while eth1 has IPv4, periodically re-assert chrony
+    # sources online (handles chronyd starting before the DHCP lease).
+    if [ "$CARRIER" = "1" ] && has_ipv4; then
+        NOW=$(date +%s)
+        if [ $((NOW - LAST_NTP_ONLINE)) -ge "$NTP_COOLDOWN" ]; then
+            reassert_chrony_sources
         fi
     fi
 
